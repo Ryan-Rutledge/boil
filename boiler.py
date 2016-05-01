@@ -9,6 +9,8 @@ from plate import Plate
 
 plates = None      # bidirectional dict of template names/extensions
 plates_path = None # Absolute path to boilerplate templates
+plate_ext = set()
+plate_lan = set()
 
 def loadTemplates(path):
     '''Loads boilerplate code template file info.'''
@@ -22,11 +24,29 @@ def loadTemplates(path):
     template_list.sort(reverse=True)
 
     plates = {}
+    plate_ext.clear()
+    plate_lan.clear()
+    # Add entries for template filetype/extension
     for template in template_list:
-        # Add an entry for template filetype/extension
         file_name, file_ext = os.path.splitext(template)
+
         plates[file_name] = file_ext
         plates[file_ext] = file_name
+
+        plate_lan.add(file_name)
+        plate_ext.add(file_ext)
+
+def supportedLanguages():
+    langs = list(plate_lan)
+    langs.sort()
+
+    return langs
+
+def supportedExtensions():
+    exts = list(plate_ext)
+    exts.sort()
+
+    return exts
 
 def getTemplate(query):
     '''Returns the contents of a boilerplate template.

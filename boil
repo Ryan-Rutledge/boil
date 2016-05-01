@@ -24,33 +24,38 @@ def getTemplatePath():
     return os.path.join(source_dir, templateDirectory)
 
 def parse():
+    def prettyList(l):
+        return ', '.join(list(map(lambda x: "'" + x + "'", l)))
+
+    languages = prettyList(boiler.supportedLanguages())
+    extensions = prettyList(boiler.supportedExtensions())
+
     # Main parser
-    parser = argparse.ArgumentParser(description='Simple boilerplate code generator.')
-    parser.add_argument('-l', '--lang', '--language', help='explicitly name a language to use (default: searches for a file extension match. If neither a language or a filename with an extension is provided, %(prog)s will exit with error code 1)')
+    parser = argparse.ArgumentParser(description='Simple boilerplate code generator.', epilog='Supported languages: {0}\nSupported extensions: {1}'.format(languages, extensions), formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE', help='Explicitly name a language to use (default: searches for a file extension match. If neither a language or a filename with an extension is provided, %(prog)s will exit with error code 1)')
 
     # Generation parser
     options = parser.add_argument_group('code options')
-    options.add_argument('-m', '--meth', '--method', action='append', default=[], help='generate empty method named METH (can be used multiple times)')
+    options.add_argument('-m', '--meth', '--method', action='append', default=[], metavar='METHOD_NAME', help='Generates an empty method (can be used multiple times)')
     options.add_argument('-f', '--force', action='store_true', help='Overwrite a file if one already exists (default: %(prog)s will exit with an error code 2)')
-    #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='expand tabs into a specific number of space characters (default: use tab characters)')
+    #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='Expand tabs into a specific number of space characters (default: use tab characters)')
 
     # Output parser
     output = parser.add_argument_group('output options')
-    output.add_argument('-x', '--exec', '--executable', action='store_true', help='attempts to make the file executable with chmod u+x')
-    output.add_argument('file', nargs='?', help='boilerplate file to be created. Returns filename for piping (default: print code to stdout)')
+    output.add_argument('-x', '--exec', '--executable', action='store_true', help='Attempts to make the file executable with chmod u+x')
+    output.add_argument('file', nargs='?', help='Boilerplate file to be created. Returns filename for piping (default: print code to stdout)')
 
     return vars(parser.parse_args())
 
 def main():
-    parser = parse()
+    # Prepare boiler templates
+    boiler.loadTemplates(getTemplatePath())
 
+    parser = parse()
     if parser.get('help'):
         parser.print_help()
     else:
-        # Prepare boiler templates
-        boiler.loadTemplates(getTemplatePath())
-
-        # Extract file from parser
+        # Extract filename from parser
         filename = parser.get('file')
 
         # Generate boilerplate code
