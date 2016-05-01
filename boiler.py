@@ -2,101 +2,83 @@
 
 import os
 import sys
-from inspect import getsourcefile
+sys.path.append(os.path.dirname(__file__))
+from plate import Plate
 
-class boiler():
-    '''Boilerplate code template manager.'''
+'''Boilerplate code template manager.'''
 
-    plates = None      # bidirectional dict of template names/extensions
-    plates_path = None # Absolute path to boilerplate templates
+plates = None      # bidirectional dict of template names/extensions
+plates_path = None # Absolute path to boilerplate templates
 
-    def loadTemplates():
-        '''Loads boilerplate code template file info.'''
+def loadTemplates(path):
+    '''Loads boilerplate code template file info.'''
 
-        # Get path of current code
-        source_file = os.path.abspath(getsourcefile(lambda:None))
-        # Get directory of current code
-        source_dir = os.path.split(source_file)[0]
-        # Get directory of boilerplate templates
-        boiler.plates_path = os.path.join(source_dir, 'plates')
-        # Get list of boilerplate template files
-        template_list = os.listdir(boiler.plates_path)
-        template_list.sort(reverse=True)
+    global plates
+    global plates_path
 
-        boiler.plates = {}
-        for template in template_list:
-            # Add an entry for template filetype/extension
-            file_name, file_ext = os.path.splitext(template)
-            boiler.plates[file_name] = file_ext
-            boiler.plates[file_ext] = file_name
+    plates_path = path
+    # Get list of boilerplate template files
+    template_list = os.listdir(plates_path)
+    template_list.sort(reverse=True)
 
-    def getTemplate(templatename):
-        '''Returns the contents of a boilerplate template.'''
+    plates = {}
+    for template in template_list:
+        # Add an entry for template filetype/extension
+        file_name, file_ext = os.path.splitext(template)
+        plates[file_name] = file_ext
+        plates[file_ext] = file_name
+
+def getTemplate(templatename):
+    '''Returns the contents of a boilerplate template.'''
+    
+    template_path = os.path.join(plates_path, templatename)
         
-        template_path = os.path.join(boiler.plates_path, templatename)
-            
-        template = open(template_path)
-        template_text = template.read()
-        template.close()
-        
-        return template_text
-        
-    def getUnknownTemplate(platetype=None, ext=None):
-        '''Calls boiler.getTemplate on the appropriate boilerplate template.'''
+    template = open(template_path)
+    template_text = template.read()
+    template.close()
+    
+    return template_text
+    
+def getUnknownTemplate(platetype=None, ext=None):
+    '''Calls getTemplate on the appropriate boilerplate template.'''
 
-        if platetype:
-            ext = boiler.plates.get(platetype)
+    if platetype:
+        ext = plates.get(platetype)
 
-            # Check if extension was found
-            if not ext:
-                raise ValueError('No template found for language "{0}"'.format(platetype))
-        elif ext:
-            platetype = boiler.plates.get(ext)
+        # Check if extension was found
+        if not ext:
+            raise ValueError('No template found for language "{0}"'.format(platetype))
+    elif ext:
+        platetype = plates.get(ext)
 
-            # Check if platetype was found
-            if not platetype:
-                raise ValueError('No template found for extension "{0}"'.format(ext))
-        else:
-            raise ValueError("Unable to generate boilerplate. No language or extension provided")
-        
-        return boiler.getTemplate(platetype + ext)
+        # Check if platetype was found
+        if not platetype:
+            raise ValueError('No template found for extension "{0}"'.format(ext))
+    else:
+        raise ValueError("Unable to generate boilerplate. No language or extension provided")
+    
+    return getTemplate(platetype + ext)
 
-    def write(text, filename):
-        '''Copies text into a new file.'''
+def plate(filename, **options):
+    '''Creates boilerplate code for a specific language.
 
-        textfile = open(filename, 'x')
-        print(tempfile.read(), end='', file=textfile)
-        
-        textfile.close()
+    options: function language tabwidth executable name std
+    '''
 
-    def plate(filename, **options):
-        '''Creates boilerplate code for a specific language.
+    template = ''
 
-        options: function language tabwidth executable
-        '''
+    # Get template contents
+    lang = options.get('language')
+    if (lang):
+        template = getUnknownTemplate(lang)
+    else:
+        ext = os.path.splitext(filename)[1]
+        template = getUnknownTemplate(ext=ext)
 
-        template = ''
+    # Create new plate
+    plate = Plate(template, options.get('name'))
 
-        # Get template contents
-        lang = options.get('language')
-        if (lang):
-            template = boiler.getUnknownTemplate(lang)
-        else:
-            ext = os.path.splitext(filename)[1]
-            template = boiler.getUnknownTemplate(ext=ext)
-        print(template)
+    # Get text from plate
+    boilerplateCode = plate.generate(options)
 
-        # Create new plate
-        #newPlate = Plate(template)
-
-        # Get text from plate
-        #boiler.write(template, filename)
-        # open editor
-
-def main():
-    # TODO: when creating boilerplate, check for --create and --editor flags
-    boiler.loadTemplates()
-    #boiler.plate('tmp.py')
-
-if __name__ == '__main__':
-    main()
+    return boilerplateCode
