@@ -2,6 +2,7 @@
 
 import os
 import sys
+import argparse
 from inspect import getsourcefile
 sys.path.append(os.path.dirname(__file__))
 import boiler
@@ -21,18 +22,41 @@ def getTemplatePath():
     # Get directory of boilerplate templates
     return os.path.join(source_dir, templateDirectory)
 
-def write(text, filename):
-    '''Copies text into a new file.'''
+def parse():
+    # Main parser
+    parser = argparse.ArgumentParser(prog='boiler', description='Boilerplate code generator.')
+    parser.add_argument('-l', '--lang', '--language', help='explicitly name a language to use (default: searches for a file extension match)')
 
-    textfile = open(filename, 'x')
-    print(tempfile.read(), end='', file=textfile)
-    
-    textfile.close()
+    # Generation parser
+    options = parser.add_argument_group('code options')
+    options.add_argument('-f', '--func', '--function', action='append', default=[], help='generate empty function out of provided name (can be used multiple times)')
+    #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='expand tabs into a specific number of space characters (default: use tab characters)')
+
+    # Output parser
+    output = parser.add_argument_group('output options')
+    output.add_argument('-x', '--exec', '--executable', action='store_true', help='attempts to make the file executable with chmod +x')
+    output.add_argument('file', nargs='?', help='boilerplate file to be created (default: print to stdout)')
+
+    return vars(parser.parse_args())
 
 def main():
-    # TODO: when creating boilerplate, check for --create and --editor flags
-    boiler.loadTemplates(getTemplatePath())
-    boiler.plate('tmp.py')
+    parser = parse()
+
+    if parser.get('help'):
+        parser.print_help()
+    else:
+        boiler.loadTemplates(getTemplatePath())
+
+        filename = parser.get('file')
+        text = boiler.plate(filename, parser)
+
+        if filename:
+            # Write output to file
+            textfile = open(filename, 'x')
+            print(text, end='', file=textfile)
+            textfile.close()
+        else:
+            print(text)
 
 if __name__ == '__main__':
     main()
