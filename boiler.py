@@ -28,36 +28,27 @@ def loadTemplates(path):
         plates[file_name] = file_ext
         plates[file_ext] = file_name
 
-def getTemplate(templatename):
-    '''Returns the contents of a boilerplate template.'''
+def getTemplate(query):
+    '''Returns the contents of a boilerplate template.
+       
+    Accepts either a language or a file extension parameter.
+    '''
+
+    templatename = [plates.get(query), query]
     
-    template_path = os.path.join(plates_path, templatename)
-        
-    template = open(template_path)
-    template_text = template.read()
-    template.close()
+    if not templatename[0]:
+        print('No boilerplate code found for', query)
+        sys.exit(1)
+    else:
+        if query[0] != '.':
+            templatename.reverse()
+            
+        template_path = os.path.join(plates_path, ''.join(templatename))
+        template = open(template_path)
+        template_text = template.read()
+        template.close()
     
     return template_text
-    
-def getUnknownTemplate(platetype=None, ext=None):
-    '''Calls getTemplate on the appropriate boilerplate template.'''
-
-    if platetype:
-        ext = plates.get(platetype)
-
-        # Check if extension was found
-        if not ext:
-            raise ValueError('No template found for language "{0}"'.format(platetype))
-    elif ext:
-        platetype = plates.get(ext)
-
-        # Check if platetype was found
-        if not platetype:
-            raise ValueError('No template found for extension "{0}"'.format(ext))
-    else:
-        raise ValueError("Not enough information was provided to generate boilerplate.")
-    
-    return getTemplate(platetype + ext)
 
 def plate(filename=None, options={}):
     '''Creates boilerplate code for a specific language.
@@ -67,14 +58,16 @@ def plate(filename=None, options={}):
 
     template = ''
 
-    lang = options.get('lang')
-    if (lang):
-        template = getUnknownTemplate(platetype=lang)
-    elif filename:
-        ext = os.path.splitext(filename)[1]
-        template = getUnknownTemplate(ext=ext)
-    else:
-        raise ValueError("Not enough information was provided to generate boilerplate.")
+    query = options.get('lang')
+    if not query:
+        if filename:
+            query = os.path.splitext(filename)[1]
+        else:
+            print("Not enough information was provided to generate boilerplate.")
+            sys.exit(1)
+
+    # Get template
+    template = getTemplate(query)
 
     # Create new plate
     plate = Plate(template, options.get('name'))
