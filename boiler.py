@@ -38,7 +38,7 @@ def getTemplate(query):
     
     if not templatename[0]:
         sys.stderr.write('No boilerplate code found for {0}.\n'.format(query))
-        sys.exit(1)
+        sys.exit(3)
     else:
         if query[0] != '.':
             templatename.reverse()
@@ -50,15 +50,12 @@ def getTemplate(query):
     
     return template_text
 
-def plate(filename=None, options={}):
-    '''Creates boilerplate code for a specific language.
-
-    options: function language tabwidth executable name std
-    '''
+def plate(filename=None, lang=None, name=None, functions=[]):
+    '''Creates boilerplate code for a specific language.'''
 
     template = ''
 
-    query = options.get('lang')
+    query = lang
     if not query:
         if filename:
             query = os.path.splitext(filename)[1]
@@ -70,9 +67,9 @@ def plate(filename=None, options={}):
     template = getTemplate(query)
 
     # Create new plate
-    plate = Plate(template, options.get('name'))
+    plate = Plate(template, name)
 
     # Get text from plate
-    boilerplateCode = plate.generate(funcs=options.get('meth'))
+    boilerplateCode = plate.generate(funcs=functions)
 
     return boilerplateCode

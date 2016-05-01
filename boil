@@ -26,12 +26,12 @@ def getTemplatePath():
 def parse():
     # Main parser
     parser = argparse.ArgumentParser(description='Simple boilerplate code generator.')
-    parser.add_argument('-l', '--lang', '--language', help='explicitly name a language to use (default: searches for a file extension match. If neither a language or a filename with an extension is provided, %{prog} will exit with error code 1)')
+    parser.add_argument('-l', '--lang', '--language', help='explicitly name a language to use (default: searches for a file extension match. If neither a language or a filename with an extension is provided, %(prog)s will exit with error code 1)')
 
     # Generation parser
     options = parser.add_argument_group('code options')
     options.add_argument('-m', '--meth', '--method', action='append', default=[], help='generate empty method named METH (can be used multiple times)')
-    options.add_argument('-f', '--force', action='store_true', help='Overwrite a file if one already exists (default: %{prog} will exit with an error code 2)')
+    options.add_argument('-f', '--force', action='store_true', help='Overwrite a file if one already exists (default: %(prog)s will exit with an error code 2)')
     #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='expand tabs into a specific number of space characters (default: use tab characters)')
 
     # Output parser
@@ -47,10 +47,14 @@ def main():
     if parser.get('help'):
         parser.print_help()
     else:
+        # Prepare boiler templates
         boiler.loadTemplates(getTemplatePath())
 
+        # Extract file from parser
         filename = parser.get('file')
-        text = boiler.plate(filename, parser)
+
+        # Generate boilerplate code
+        text = boiler.plate(filename, parser.get('lang'), parser.get('name'), parser.get('meth'))
 
         if filename:
             textfile = None
