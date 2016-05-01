@@ -5,61 +5,64 @@ import re
 class Plate:
     '''Boilerplate code generator.'''
 
-    function_extractor = re.compile(r'{BP_FUNCTION_START}(.*){BP_FUNCTION_END}', re.DOTALL)
-    funcname_extractor = re.compile(r'{BP_FNAME_START}(.*){BP_FNAME_END}')
-    tempname_extractor = re.compile(r'{BP_NAME_START}(.*){BP_NAME_END}')
+    tempname_regex = re.compile(r'\{BP_NAME_BEG\}(.*)\{BP_NAME_END\}')
+    funcname_regex = re.compile(r'\{BP_FNAME_BEG\}(.*)\{BP_FNAME_END\}')
+    function_regex = re.compile(r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
 
     def extract(template, name=None):
-        '''Returns a tuple with a template and function and inject points.
+        '''Returns a tuple with the beginning and end of a generic template and function.
            
-        ((template, functionInject), (functionTemplate, nameInject))
+        ([template_beg, template_end], [function_beg, function_end])
            
-        template
-            A clean template, with no functions
+        template_beg
+            A clean template up to function declarations
 
-        functionInject
-            Char count from start of template to function insertion
+        template_end
+            A clean template after function declarations
+           
+        function_beg
+            A clean function template up to the name declaration
 
-        functionTemplate
-            A nameless, void function
+        function_end
+            A clean function template after the name declaration
 
-        nameInject
-            Char count from start of functionTemplate to name insertion
         '''
 
-        cleanTemplate    = template
-        functionInject   = None
-        functionTemplate = None
-        nameInject       = None
+        cleanTemplate = template
 
         # Name match
-        nm = Plate.tempname_extractor.search(template)
+        nm = Plate.tempname_regex.search(template)
 
         if nm:
             if not name:
                 name = 'DEFAULT_NAME'
-            cleanTemplate = Plate.tempname_extractor.sub(name, template)
+            cleanTemplate = Plate.tempname_regex.sub(name, template)
+
+        template_beg = cleanTemplate
+        template_end = ''
+        function_beg = ''
+        function_end = ''
 
         # Function match
-        fm = Plate.function_extractor.search(cleanTemplate)
-        if fm:
-            functionInject = fm.start()
+        fm = Plate.function_regex.search(cleanTemplate)
 
+        if fm:
             # Extract function from template
-            cleanTemplate = cleanTemplate[:functionInject] + cleanTemplate[:fm.end()]
+            template_beg = cleanTemplate[:fm.start()]
+            template_end = cleanTemplate[fm.end():]
 
             # Function template
             functionTemplate = fm.groups()[0]
 
             # Function Name match
-            fnm = Plate.funcname_extractor.search(functionTemplate);
+            fnm = Plate.funcname_regex.search(functionTemplate);
+
             if fnm:
-                nameInject = fnm.start()
-
                 # Extract name from function template
-                functionTemplate = functionTemplate[:nameInject] + functionTemplate[:fnm.end()]
+                function_beg = functionTemplate[:fnm.start()]
+                function_end = functionTemplate[fnm.end():]
 
-        return ((cleanTemplate, functionInject), (functionTemplate, nameInject))
+        return ((template_beg, template_end), (function_beg, function_end))
 
     def __init__(self, template, name=None):
         '''Convert template into a useful object.'''
@@ -71,4 +74,20 @@ class Plate:
     def generate(self, options):
         '''Create a custom boilerplate template.'''
 
-        return self.templateInfo[0]
+        funcs = options.get('func')
+
+        functions = ''
+        fbeg, fend = self.functionInfo
+
+        if funcs and fbeg and fend:
+            # Generate functions
+            function_list = []
+            for func in funcs:
+                function_list.append(fbeg + func + fend)
+
+            functions = ''.join(function_list)
+
+        tbeg, tend = self.templateInfo
+        template = tbeg + functions + tend
+
+        return template
