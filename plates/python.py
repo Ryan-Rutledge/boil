@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+{BP_FUNC_BEG}
+def {BP_FNAME_BEG}{BP_FNAME_END}():
+    pass
+{BP_FUNC_END}
+
 def main():
     pass
 
