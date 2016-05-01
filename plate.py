@@ -71,10 +71,8 @@ class Plate:
 
         self.templateInfo, self.functionInfo = Plate.extract(template, name)
 
-    def generate(self, options):
+    def generate(self, funcs=[]):
         '''Create a custom boilerplate template.'''
-
-        funcs = options.get('func')
 
         functions = ''
         fbeg, fend = self.functionInfo

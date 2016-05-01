@@ -73,6 +73,6 @@ def plate(filename=None, options={}):
     plate = Plate(template, options.get('name'))
 
     # Get text from plate
-    boilerplateCode = plate.generate(options)
+    boilerplateCode = plate.generate(funcs=options.get('meth'))
 
     return boilerplateCode
