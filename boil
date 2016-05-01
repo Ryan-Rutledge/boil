@@ -24,7 +24,7 @@ def getTemplatePath():
 
 def parse():
     # Main parser
-    parser = argparse.ArgumentParser(prog='boiler', description='Boilerplate code generator.')
+    parser = argparse.ArgumentParser(description='Simple boilerplate code generator.')
     parser.add_argument('-l', '--lang', '--language', help='explicitly name a language to use (default: searches for a file extension match)')
 
     # Generation parser
@@ -35,7 +35,7 @@ def parse():
     # Output parser
     output = parser.add_argument_group('output options')
     output.add_argument('-x', '--exec', '--executable', action='store_true', help='attempts to make the file executable with chmod +x')
-    output.add_argument('file', nargs='?', help='boilerplate file to be created (default: print to stdout)')
+    output.add_argument('file', nargs='?', help='boilerplate file to be created. Returns filename for piping (default: print code to stdout)')
 
     return vars(parser.parse_args())
 
@@ -55,6 +55,8 @@ def main():
             textfile = open(filename, 'x')
             print(text, end='', file=textfile)
             textfile.close()
+
+            print(filename)
         else:
             print(text)
 
