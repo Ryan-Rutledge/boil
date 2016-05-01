@@ -55,11 +55,11 @@ def getUnknownTemplate(platetype=None, ext=None):
         if not platetype:
             raise ValueError('No template found for extension "{0}"'.format(ext))
     else:
-        raise ValueError("Unable to generate boilerplate. No language or extension provided")
+        raise ValueError("Not enough information was provided to generate boilerplate.")
     
     return getTemplate(platetype + ext)
 
-def plate(filename, **options):
+def plate(filename=None, options={}):
     '''Creates boilerplate code for a specific language.
 
     options: function language tabwidth executable name std
@@ -67,13 +67,14 @@ def plate(filename, **options):
 
     template = ''
 
-    # Get template contents
-    lang = options.get('language')
+    lang = options.get('lang')
     if (lang):
-        template = getUnknownTemplate(lang)
-    else:
+        template = getUnknownTemplate(platetype=lang)
+    elif filename:
         ext = os.path.splitext(filename)[1]
         template = getUnknownTemplate(ext=ext)
+    else:
+        raise ValueError("Not enough information was provided to generate boilerplate.")
 
     # Create new plate
     plate = Plate(template, options.get('name'))
