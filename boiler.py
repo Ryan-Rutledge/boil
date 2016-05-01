@@ -37,7 +37,7 @@ def getTemplate(query):
     templatename = [plates.get(query), query]
     
     if not templatename[0]:
-        print('No boilerplate code found for', query)
+        sys.stderr.write('No boilerplate code found for {0}.\n'.format(query))
         sys.exit(1)
     else:
         if query[0] != '.':
@@ -63,7 +63,7 @@ def plate(filename=None, options={}):
         if filename:
             query = os.path.splitext(filename)[1]
         else:
-            print("Not enough information was provided to generate boilerplate.")
+            sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
             sys.exit(1)
 
     # Get template

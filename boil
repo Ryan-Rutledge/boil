@@ -62,7 +62,7 @@ def main():
                 try:
                     textfile = open(filename, 'x')
                 except FileExistsError:
-                    print('File already exists. Use -f to overwrite.')
+                    sys.stderr.write('File cannot be written because it already exists. Use -f to overwrite.\n')
                     sys.exit(2)
 
             print(text, end='', file=textfile)
