@@ -6,8 +6,7 @@ import stat
 import argparse
 from inspect import getsourcefile
 sys.path.append(os.path.dirname(__file__))
-import boiler
-
+from boiler import Boiler
 
 templateDirectory = 'plates'
 
@@ -23,15 +22,11 @@ def getTemplatePath():
     # Get directory of boilerplate templates
     return os.path.join(source_dir, templateDirectory)
 
-def parse():
-    def prettyList(l):
-        return ', '.join(list(map(lambda x: "'" + x + "'", l)))
-
-    languages = prettyList(boiler.supportedLanguages())
-    extensions = prettyList(boiler.supportedExtensions())
+def parse(epilog):
+    '''Parses command line arguments'''
 
     # Main parser
-    parser = argparse.ArgumentParser(description='Simple boilerplate code generator.', epilog='Supported languages: {0}\nSupported extensions: {1}'.format(languages, extensions), formatter_class=argparse.RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Simple boilerplate code generator.', epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE', help='Explicitly name a language to use (default: searches for a file extension match. If neither a language or a filename with an extension is provided, %(prog)s will exit with error code 1)')
 
     # Generation parser
@@ -51,9 +46,16 @@ def parse():
 
 def main():
     # Prepare boiler templates
-    boiler.loadTemplates(getTemplatePath())
+    boiler = Boiler(getTemplatePath())
 
-    parser = parse()
+    # Get epilog info
+    def prettyList(l):
+        return ', '.join(list(map(lambda x: "'" + x + "'", l)))
+    languages = prettyList(boiler.supportedLanguages())
+    extensions = prettyList(boiler.supportedExtensions())
+
+    parser = parse('Supported languages: {0}\nSupported extensions: {1}'.format(languages, extensions))
+
     if parser.get('help'):
         parser.print_help()
     else:

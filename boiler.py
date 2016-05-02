@@ -1,108 +1,112 @@
 #!/usr/bin/env python3
 
-#'''Boilerplate code template manager.'''
-
 import os
 import sys
 sys.path.append(os.path.dirname(__file__))
 from plate import Plate
 
-plates = None      # bidirectional dict of template names/extensions
-plates_path = None # Absolute path to boilerplate templates
-plate_ext = set()
-plate_lan = set()
+templateDirectory = 'plates'
 
-def loadTemplates(path):
-    '''Loads boilerplate code template file info.'''
+class Boiler:
+    '''Boilerplate code template manager.'''
 
-    global plates
-    global plates_path
+    def __init__(self, template_directory):
+        self.plates = None      # bidirectional dict of template names/extensions
+        self.plates_path = None # Absolute path to boilerplate templates
+        self.plate_ext = set()
+        self.plate_lan = set()
 
-    plates_path = path
-    # Get list of boilerplate template files
-    template_list = os.listdir(plates_path)
-    template_list.sort(reverse=True)
+        self.loadTemplates(template_directory)
 
-    plates = {}
-    plate_ext.clear()
-    plate_lan.clear()
-    # Add entries for template filetype/extension
-    for template in template_list:
-        file_name, file_ext = os.path.splitext(template)
+    def loadTemplates(self, path):
+        '''Loads boilerplate code template file info.'''
 
-        plates[file_name] = file_ext
-        plates[file_ext] = file_name
+        self.plates_path = path
 
-        plate_lan.add(file_name)
-        plate_ext.add(file_ext)
+        # Get list of boilerplate template files
+        template_list = os.listdir(self.plates_path)
+        template_list.sort(reverse=True)
 
-def supportedLanguages():
-    '''Returns a sorted list of supported languages.'''
+        self.plates = {}
+        self.plate_ext.clear()
+        self.plate_lan.clear()
+        # Add entries for template filetype/extension
+        for template in template_list:
+            file_name, file_ext = os.path.splitext(template)
 
-    langs = list(plate_lan)
-    langs.sort()
+            self.plates[file_name] = file_ext
+            self.plates[file_ext] = file_name
 
-    return langs
+            self.plate_lan.add(file_name)
+            self.plate_ext.add(file_ext)
 
-def supportedExtensions():
-    '''Returns a sorted list of supported extensions.'''
+    def supportedLanguages(self):
+        '''Returns a sorted list of supported languages.'''
 
-    exts = list(plate_ext)
-    exts.sort()
+        langs = list(self.plate_lan)
+        langs.sort()
 
-    return exts
+        return langs
 
-def getTemplate(query):
-    '''Returns the contents of a boilerplate template.
-       
-    Accepts either a language or a file extension parameter.
-    '''
+    def supportedExtensions(self):
+        '''Returns a sorted list of supported extensions.'''
 
-    templatename = [plates.get(query), query]
-    
-    if not templatename[0]:
-        sys.stderr.write('No boilerplate code found for {0}.\n'.format(query))
-        sys.exit(3)
-    else:
-        if query[0] != '.':
-            templatename.reverse()
-            
-        template_path = os.path.join(plates_path, ''.join(templatename))
-        template = open(template_path)
-        template_text = template.read()
-        template.close()
-    
-    return template_text
+        exts = list(self.plate_ext)
+        exts.sort()
 
-def plate(filename=None, lang=None, functions=[], override_name=None, newlines=False):
-    '''Creates boilerplate code for a specific language.'''
+        return exts
 
-    template = ''
+    def getTemplate(self, query):
+        '''Returns the contents of a boilerplate template.
+           
+        Accepts either a language or a file extension parameter.
+        '''
 
-    name = None
-    ext = None
-    query = None
+        templatename = [self.plates.get(query), query]
+        
+        if not templatename[0]:
+            sys.stderr.write('No boilerplate code found for {0}.\n'.format(query))
+            sys.exit(3)
+        else:
+            if not query.startswith('.'):
+                templatename.reverse()
+                
+            template_path = os.path.join(self.plates_path, ''.join(templatename))
+            template = open(template_path)
+            template_text = template.read()
+            template.close()
+        
+        return template_text
 
-    if filename:
-        name, ext = os.path.splitext(filename)
+    def plate(self, filename=None, lang=None, functions=[], override_name=None, newlines=False):
+        '''Creates boilerplate code for a specific language.'''
 
-    if lang:
-        query = lang
-    elif ext:
-        query = ext
-    else:
-        sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
-        sys.exit(1)
+        template = ''
 
-    # Get template
-    template = getTemplate(query)
+        name = None
+        ext = None
+        query = None
 
-    # Create new plate
-    plate = Plate(template)
+        if filename:
+            name, ext = os.path.splitext(filename)
 
-    # Get text from plate
-    if override_name:
-        name = override_name
-    boilerplateCode = plate.generate(name, functions, newlines=bool(newlines))
+        if lang:
+            query = lang
+        elif ext:
+            query = ext
+        else:
+            sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
+            sys.exit(1)
 
-    return boilerplateCode
+        # Get template
+        template = self.getTemplate(query)
+
+        # Create new plate
+        plate = Plate(template)
+
+        # Get text from plate
+        if override_name:
+            name = override_name
+        boilerplateCode = plate.generate(name, functions, newlines=bool(newlines))
+
+        return boilerplateCode
