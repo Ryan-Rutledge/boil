@@ -13,11 +13,10 @@ def parse(epilog):
     # Main parser
     parser = argparse.ArgumentParser(
             description='Simple boilerplate code generator.',
-            epilog=epilog,
-            formatter_class=argparse.RawTextHelpFormatter)
+            epilog=epilog)
 
     parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
-        help='Explicitly name a language to use (default: searches for a file' \
+        help='Explicitly name a language to use (default: searches for a file'
              ' extension match. If neither a language or a filename with an' \
              ' extension is provided, %(prog)s will exit with error code 1)')
 
