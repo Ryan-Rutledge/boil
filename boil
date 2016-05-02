@@ -65,7 +65,7 @@ def main():
             filename = os.path.split(filepath)[1]
 
         text = ''
-        name = parser.get('name')
+        name = parser.get('classname')
         lang = parser.get('lang')
         meth = parser.get('meth')
         line = parser.get('line')
@@ -97,7 +97,7 @@ def main():
 
             print(filepath)
         else:
-            print(text)
+            print(text, end='')
 
 if __name__ == '__main__':
     main()
