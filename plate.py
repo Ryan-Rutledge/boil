@@ -6,54 +6,55 @@ import re
 class Plate:
     '''Boilerplate code generator.'''
 
-    class regex:
+    class _regex:
         name  = re.compile(r'\{BP_NAME\}')
         fname = re.compile(r'\{BP_FNAME\}')
-        func  = re.compile(r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
+        func  = re.compile(
+                    r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
         line  = re.compile(r'\{BP_LINE_BEG\}(.*?){BP_LINE_END\}', re.DOTALL)
 
-    DEFAULT_NAME = 'DEFAULT_NAME'
+    default_classname = 'DEFAULT_NAME'
 
     def __init__(self, template, name=None):
         '''Convert template into a useful object.'''
 
         self.template = template
 
-        fm = Plate.regex.func.search(template)
+        fm = Plate._regex.func.search(template)
 
         self.function = fm.groups()[0] if fm else None
 
-    def newTemplate(self, name):
+    def _newTemplate(self, name):
         '''Returns a template with the name filled in.'''
 
         if not name:
-            name=Plate.DEFAULT_NAME
+            name=Plate.default_classname
 
-        return Plate.regex.name.sub(name, self.template)
+        return Plate._regex.name.sub(name, self.template)
     
-    def newFunction(self, name):
+    def _newFunction(self, name):
         '''Creates an empty function with the name filled in.'''
 
-        return Plate.regex.fname.sub(name, self.function)
+        return Plate._regex.fname.sub(name, self.function)
 
-    def insertFunctions(self, template, funcs=[]):
+    def _insertFunctions(self, template, funcs=[]):
         '''Insert functions into template.'''
 
         functions = []
 
         for func in funcs:
-            functions.append(self.newFunction(func))
+            functions.append(self._newFunction(func))
         
-        return Plate.regex.func.sub(''.join(functions), template)
+        return Plate._regex.func.sub(''.join(functions), template)
 
-    def insertBreaks(self, template, newlines=False):
-        return Plate.regex.line.sub(r'\1' if newlines else ' ', template)
+    def _insertBreaks(self, template, newlines=False):
+        return Plate._regex.line.sub(r'\1' if newlines else ' ', template)
 
     def generate(self, name=None, funcs=[], newlines=False):
-        '''Create a custom boilerplate template.'''
+        '''Returns a custom boilerplate template.'''
 
-        template = self.newTemplate(name)
-        template = self.insertFunctions(template, funcs)
-        template = self.insertBreaks(template, newlines=newlines)
+        template = self._newTemplate(name)
+        template = self._insertFunctions(template, funcs)
+        template = self._insertBreaks(template, newlines=newlines)
 
         return template

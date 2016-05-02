@@ -8,10 +8,10 @@ from plate import Plate
 class Boiler:
     '''Boilerplate code template manager.'''
 
-    default_template_directory = 'plates'
+    def_plate_dir = 'plates'
 
     def __init__(self, template_directory=None):
-        self.plates = None      # bidirectional dict of template names/extensions
+        self.plates = None      # bidirectional dict  names/extensions
         self.plates_path = None # Absolute path to boilerplate templates
         self.plate_ext = set()
         self.plate_lan = set()
@@ -19,9 +19,11 @@ class Boiler:
         self.loadTemplates(template_directory)
 
     def loadTemplates(self, path=None):
-        '''Loads boilerplate code template file info.'''
+        '''Loads boilerplate code template file info.
 
-        # If a path is not provided, use the source code directory
+        If a path is not provided, it defaults to the source code directory
+        '''
+
         if path is None:
             from inspect import getsourcefile
 
@@ -32,7 +34,7 @@ class Boiler:
             source_dir = os.path.split(source_file)[0]
 
             # Get directory of boilerplate templates
-            self.plates_path = os.path.join(source_dir, Boiler.default_template_directory)
+            self.plates_path = os.path.join(source_dir, Boiler.def_plate_dir)
         else:
             self.plates_path = path
 
@@ -69,7 +71,7 @@ class Boiler:
 
         return exts
 
-    def getTemplate(self, lang=None, ext=None):
+    def _getTemplate(self, lang=None, ext=None):
         '''Returns the contents of a boilerplate template.
            
         First searches for a language match, and then extension
@@ -80,6 +82,7 @@ class Boiler:
         # Look for language template
         if lang is not None:
             tmp_ext = self.plates.get(lang)
+
             if tmp_ext is not None:
                 template_name = lang + tmp_ext
 
@@ -90,31 +93,34 @@ class Boiler:
             if tmp_lang is not None:
                 template_name = tmp_lang + ext
 
+        template_text = None
         if template_name is not None:
-            template_path = os.path.join(self.plates_path, ''.join(template_name))
+            template_path = os.path.join(self.plates_path, template_name)
 
             with open(template_path) as template:
                 template_text = template.read()
         
         return template_text
 
-    def plate(self, lang=None, ext=None, functions=[], name=None, newlines=False):
+    def plate(self, lang=None, ext=None, funcs=[], name=None, newlines=False):
         '''Creates boilerplate code for a specific language.'''
 
-        template = self.getTemplate(ext=ext, lang=lang)
+        template = self._getTemplate(ext=ext, lang=lang)
 
         if template is None:
             if (lang or ext) is not None:
-                sys.stderr.write('No template found for the extension or language provided.')
+                sys.stderr.write('Unkown language or extension.')
                 sys.exit(3)
             else:
-                sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
+                sys.stderr.write(
+                    'Cannot generate boilerplate from info' \
+                    ' provided. An extension or language is required.\n')
                 sys.exit(1)
 
         # Create new plate
         plate = Plate(template)
 
         # Get text from plate
-        boilerplateCode = plate.generate(name, functions, newlines=bool(newlines))
+        boilerplateCode = plate.generate(name, funcs, newlines=bool(newlines))
 
         return boilerplateCode
