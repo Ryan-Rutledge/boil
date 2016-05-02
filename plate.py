@@ -9,83 +9,45 @@ class Plate:
     funcname_regex = re.compile(r'\{BP_FNAME_BEG\}(.*)\{BP_FNAME_END\}')
     function_regex = re.compile(r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
 
-    def extract(template, name=None):
-        '''Returns a tuple with the beginning and end of a generic template and function.
-           
-        ([template_beg, template_end], [function_beg, function_end])
-           
-        template_beg
-            A clean template up to function declarations
-
-        template_end
-            A clean template after function declarations
-           
-        function_beg
-            A clean function template up to the name declaration
-
-        function_end
-            A clean function template after the name declaration
-
-        '''
-
-        cleanTemplate = template
-
-        # Name match
-        nm = Plate.tempname_regex.search(template)
-
-        if nm:
-            if not name:
-                name = 'DEFAULT_NAME'
-            cleanTemplate = Plate.tempname_regex.sub(name, template)
-
-        template_beg = cleanTemplate
-        template_end = ''
-        function_beg = ''
-        function_end = ''
-
-        # Function match
-        fm = Plate.function_regex.search(cleanTemplate)
-
-        if fm:
-            # Extract function from template
-            template_beg = cleanTemplate[:fm.start()]
-            template_end = cleanTemplate[fm.end():]
-
-            # Function template
-            functionTemplate = fm.groups()[0]
-
-            # Function Name match
-            fnm = Plate.funcname_regex.search(functionTemplate);
-
-            if fnm:
-                # Extract name from function template
-                function_beg = functionTemplate[:fnm.start()]
-                function_end = functionTemplate[fnm.end():]
-
-        return ((template_beg, template_end), (function_beg, function_end))
+    DEFAULT_NAME = 'DEFAULT_NAME'
 
     def __init__(self, template, name=None):
         '''Convert template into a useful object.'''
-        
+
         self.template = template
 
-        self.templateInfo, self.functionInfo = Plate.extract(template, name)
+        fm = Plate.function_regex.search(template)
 
-    def generate(self, funcs=[]):
+        self.function = fm.groups()[0] if fm else None
+
+    def newTemplate(self, name):
+        '''Returns a template with the name filled in.'''
+
+        if not name:
+            name=Plate.DEFAULT_NAME
+
+        return Plate.tempname_regex.sub(name, self.template)
+    
+    def newFunction(self, name):
+        '''Creates an empty function with the name filled in.'''
+
+        return Plate.funcname_regex.sub(name, self.function)
+
+    def insertFunctions(self, template, funcs=[]):
+        '''Insert functions into template.'''
+
+        functions = []
+
+        for func in funcs:
+            functions.append(self.newFunction(func))
+        
+        return Plate.function_regex.sub(''.join(functions), template)
+
+    def generate(self, name=None, funcs=[]):
         '''Create a custom boilerplate template.'''
 
-        functions = ''
-        fbeg, fend = self.functionInfo
-
-        if funcs and fbeg and fend:
-            # Generate functions
-            function_list = []
-            for func in funcs:
-                function_list.append(fbeg + func + fend)
-
-            functions = ''.join(function_list)
-
-        tbeg, tend = self.templateInfo
-        template = tbeg + functions + tend
+        template = self.newTemplate(name)
+        template = self.insertFunctions(template, funcs)
+        #template = insertLines(template)
 
         return template

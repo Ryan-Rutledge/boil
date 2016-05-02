@@ -36,8 +36,9 @@ def parse():
 
     # Generation parser
     options = parser.add_argument_group('code options')
-    options.add_argument('-m', '--meth', '--method', action='append', default=[], metavar='METHOD_NAME', help='Generates an empty method (can be used multiple times)')
     options.add_argument('-f', '--force', action='store_true', help='Overwrite a file if one already exists (default: %(prog)s will exit with an error code 2)')
+    options.add_argument('-m', '--meth', '--method', action='append', default=[], metavar='METHOD_NAME', help='Generates an empty method (can be used multiple times)')
+    options.add_argument('-n', '--name', help='Specify a class name for languages that require a boilerplate class (default: uses filename without extension)')
     #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='Expand tabs into a specific number of space characters (default: use tab characters)')
 
     # Output parser
@@ -56,20 +57,31 @@ def main():
         parser.print_help()
     else:
         # Extract filename from parser
-        filename = parser.get('file')
+        filepath = parser.get('file')
+        filename = None
 
+        if filepath:
+            filename = os.path.split(filepath)[1]
+
+        text = ''
+        name = parser.get('name')
+        lang = parser.get('lang')
+        meth = parser.get('meth')
         # Generate boilerplate code
-        text = boiler.plate(filename, parser.get('lang'), parser.get('meth'))
+        if name:
+            text = boiler.plate(filename, lang, meth, override_name=name)
+        else:
+            text = boiler.plate(filename, lang, meth)
 
-        if filename:
+        if filepath:
             textfile = None
 
             # Write output to file
             if parser.get('force'):
-                textfile = open(filename, 'w')
+                textfile = open(filepath, 'w')
             else:
                 try:
-                    textfile = open(filename, 'x')
+                    textfile = open(filepath, 'x')
                 except FileExistsError:
                     sys.stderr.write('File cannot be written because it already exists. Use -f to overwrite.\n')
                     sys.exit(2)
@@ -79,9 +91,9 @@ def main():
 
             # Make file executable for user
             if parser.get('exec'):
-                os.chmod(filename, stat.S_IMODE(os.stat(filename).st_mode) | stat.S_IXUSR)
+                os.chmod(filepath, stat.S_IMODE(os.stat(filepath).st_mode) | stat.S_IXUSR)
 
-            print(filename)
+            print(filepath)
         else:
             print(text)
 

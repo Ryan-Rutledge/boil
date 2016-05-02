@@ -70,7 +70,7 @@ def getTemplate(query):
     
     return template_text
 
-def plate(filename=None, lang=None, functions=[]):
+def plate(filename=None, lang=None, functions=[], override_name=None):
     '''Creates boilerplate code for a specific language.'''
 
     template = ''
@@ -94,9 +94,11 @@ def plate(filename=None, lang=None, functions=[]):
     template = getTemplate(query)
 
     # Create new plate
-    plate = Plate(template, name)
+    plate = Plate(template)
 
     # Get text from plate
-    boilerplateCode = plate.generate(funcs=functions)
+    if override_name:
+        name = override_name
+    boilerplateCode = plate.generate(name, functions)
 
     return boilerplateCode
