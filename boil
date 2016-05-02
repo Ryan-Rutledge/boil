@@ -59,7 +59,7 @@ def main():
         filename = parser.get('file')
 
         # Generate boilerplate code
-        text = boiler.plate(filename, parser.get('lang'), parser.get('name'), parser.get('meth'))
+        text = boiler.plate(filename, parser.get('lang'), parser.get('meth'))
 
         if filename:
             textfile = None

@@ -70,18 +70,25 @@ def getTemplate(query):
     
     return template_text
 
-def plate(filename=None, lang=None, name=None, functions=[]):
+def plate(filename=None, lang=None, functions=[]):
     '''Creates boilerplate code for a specific language.'''
 
     template = ''
 
-    query = lang
-    if not query:
-        if filename:
-            query = os.path.splitext(filename)[1]
-        else:
-            sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
-            sys.exit(1)
+    name = None
+    ext = None
+    query = None
+
+    if filename:
+        name, ext = os.path.splitext(filename)
+
+    if lang:
+        query = lang
+    elif ext:
+        query = ext
+    else:
+        sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
+        sys.exit(1)
 
     # Get template
     template = getTemplate(query)
