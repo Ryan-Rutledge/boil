@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
+#'''Boilerplate code template manager.'''
+
 import os
 import sys
 sys.path.append(os.path.dirname(__file__))
 from plate import Plate
-
-'''Boilerplate code template manager.'''
 
 plates = None      # bidirectional dict of template names/extensions
 plates_path = None # Absolute path to boilerplate templates
@@ -37,12 +37,16 @@ def loadTemplates(path):
         plate_ext.add(file_ext)
 
 def supportedLanguages():
+    '''Returns a sorted list of supported languages.'''
+
     langs = list(plate_lan)
     langs.sort()
 
     return langs
 
 def supportedExtensions():
+    '''Returns a sorted list of supported extensions.'''
+
     exts = list(plate_ext)
     exts.sort()
 
