@@ -2,15 +2,14 @@
 
 import os
 import sys
-sys.path.append(os.path.dirname(__file__))
 from plate import Plate
-
-templateDirectory = 'plates'
 
 class Boiler:
     '''Boilerplate code template manager.'''
 
-    def __init__(self, template_directory):
+    default_template_directory = 'plates'
+
+    def __init__(self, template_directory=None):
         self.plates = None      # bidirectional dict of template names/extensions
         self.plates_path = None # Absolute path to boilerplate templates
         self.plate_ext = set()
@@ -18,10 +17,23 @@ class Boiler:
 
         self.loadTemplates(template_directory)
 
-    def loadTemplates(self, path):
+    def loadTemplates(self, path=None):
         '''Loads boilerplate code template file info.'''
 
-        self.plates_path = path
+        # If a path is not provided, use the source code directory
+        if path is None:
+            from inspect import getsourcefile
+
+            # Get path of current code
+            source_file = os.path.abspath(getsourcefile(lambda:None))
+
+            # Get directory of current code
+            source_dir = os.path.split(source_file)[0]
+
+            # Get directory of boilerplate templates
+            self.plates_path = os.path.join(source_dir, Boiler.default_template_directory)
+        else:
+            self.plates_path = path
 
         # Get list of boilerplate template files
         template_list = os.listdir(self.plates_path)

@@ -4,23 +4,7 @@ import os
 import sys
 import stat
 import argparse
-from inspect import getsourcefile
-sys.path.append(os.path.dirname(__file__))
 from boiler import Boiler
-
-templateDirectory = 'plates'
-
-def getTemplatePath():
-    '''Returns path to boilerplate code templates.'''
-
-    # Get path of current code
-    source_file = os.path.abspath(getsourcefile(lambda:None))
-
-    # Get directory of current code
-    source_dir = os.path.split(source_file)[0]
-
-    # Get directory of boilerplate templates
-    return os.path.join(source_dir, templateDirectory)
 
 def parse(epilog):
     '''Parses command line arguments'''
@@ -46,7 +30,7 @@ def parse(epilog):
 
 def main():
     # Prepare boiler templates
-    boiler = Boiler(getTemplatePath())
+    boiler = Boiler()
 
     # Get epilog info
     def prettyList(l):
