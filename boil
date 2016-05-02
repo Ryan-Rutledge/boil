@@ -6,6 +6,7 @@ import stat
 import argparse
 from boiler import Boiler
 
+
 def parse(epilog):
     '''Parses command line arguments'''
 
@@ -28,38 +29,43 @@ def parse(epilog):
 
     return vars(parser.parse_args())
 
+
 def main():
     # Prepare boiler templates
     boiler = Boiler()
 
-    # Get epilog info
-    def prettyList(l):
-        return ', '.join(list(map(lambda x: "'" + x + "'", l)))
-    languages = prettyList(boiler.supportedLanguages())
-    extensions = prettyList(boiler.supportedExtensions())
+    # Format epilog for help page
+    def epilog():
+        def prettyList(l):
+            return ', '.join(list(map(lambda x: "'" + x + "'", l)))
 
-    parser = parse('Supported languages: {0}\nSupported extensions: {1}'.format(languages, extensions))
+        languages = prettyList(boiler.supportedLanguages())
+        extensions = prettyList(boiler.supportedExtensions())
+
+        return 'Supported languages: {0}\nSupported extensions: {1}'.format(languages, extensions)
+
+    parser = parse(epilog())
 
     if parser.get('help'):
         parser.print_help()
     else:
-        # Extract filename from parser
         filepath = parser.get('file')
-        filename = None
+
+        name = None
+        ext = None
 
         if filepath:
-            filename = os.path.split(filepath)[1]
+            name, ext = os.path.split(filepath)[1]
 
-        text = ''
-        name = parser.get('classname')
-        lang = parser.get('lang')
-        meth = parser.get('meth')
-        line = parser.get('line')
+        if parser.get('classname'):
+            name = parser.get('classname')
+
         # Generate boilerplate code
-        if name:
-            text = boiler.plate(filename, lang, meth, override_name=name, newlines=line)
-        else:
-            text = boiler.plate(filename, lang, meth, newlines=line)
+        text = boiler.plate(ext=ext,
+                lang=parser.get('lang'),
+                functions=parser.get('meth'),
+                name=name,
+                newlines=parser.get('line'))
 
         if filepath:
             textfile = None
@@ -84,6 +90,7 @@ def main():
             print(filepath)
         else:
             print(text, end='')
+
 
 if __name__ == '__main__':
     main()

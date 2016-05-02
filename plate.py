@@ -2,6 +2,7 @@
 
 import re
 
+
 class Plate:
     '''Boilerplate code generator.'''
 

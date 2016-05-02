@@ -4,6 +4,7 @@ import os
 import sys
 from plate import Plate
 
+
 class Boiler:
     '''Boilerplate code template manager.'''
 
@@ -68,57 +69,52 @@ class Boiler:
 
         return exts
 
-    def getTemplate(self, query):
+    def getTemplate(self, lang=None, ext=None):
         '''Returns the contents of a boilerplate template.
            
-        Accepts either a language or a file extension parameter.
+        First searches for a language match, and then extension
         '''
 
-        templatename = [self.plates.get(query), query]
-        
-        if not templatename[0]:
-            sys.stderr.write('No boilerplate code found for {0}.\n'.format(query))
-            sys.exit(3)
-        else:
-            if not query.startswith('.'):
-                templatename.reverse()
-                
-            template_path = os.path.join(self.plates_path, ''.join(templatename))
-            template = open(template_path)
-            template_text = template.read()
-            template.close()
+        template_name = None
+
+        # Look for language template
+        if lang is not None:
+            tmp_ext = self.plates.get(lang)
+            if tmp_ext is not None:
+                template_name = lang + tmp_ext
+
+        # Look for extension template
+        if template_name is None and ext is not None:
+            tmp_lang = self.plates.get(ext)
+            
+            if tmp_lang is not None:
+                template_name = tmp_lang + ext
+
+        if template_name is not None:
+            template_path = os.path.join(self.plates_path, ''.join(template_name))
+
+            with open(template_path) as template:
+                template_text = template.read()
         
         return template_text
 
-    def plate(self, filename=None, lang=None, functions=[], override_name=None, newlines=False):
+    def plate(self, lang=None, ext=None, functions=[], name=None, newlines=False):
         '''Creates boilerplate code for a specific language.'''
 
-        template = ''
+        template = self.getTemplate(ext=ext, lang=lang)
 
-        name = None
-        ext = None
-        query = None
-
-        if filename:
-            name, ext = os.path.splitext(filename)
-
-        if lang:
-            query = lang
-        elif ext:
-            query = ext
-        else:
-            sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
-            sys.exit(1)
-
-        # Get template
-        template = self.getTemplate(query)
+        if template is None:
+            if (lang or ext) is not None:
+                sys.stderr.write('No template found for the extension or language provided.')
+                sys.exit(3)
+            else:
+                sys.stderr.write("Not enough information was provided to generate boilerplate.\n")
+                sys.exit(1)
 
         # Create new plate
         plate = Plate(template)
 
         # Get text from plate
-        if override_name:
-            name = override_name
         boilerplateCode = plate.generate(name, functions, newlines=bool(newlines))
 
         return boilerplateCode
