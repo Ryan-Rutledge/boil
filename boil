@@ -38,7 +38,8 @@ def parse():
     options = parser.add_argument_group('code options')
     options.add_argument('-f', '--force', action='store_true', help='Overwrite a file if one already exists (default: %(prog)s will exit with an error code 2)')
     options.add_argument('-m', '--meth', '--method', action='append', default=[], metavar='METHOD_NAME', help='Generates an empty method (can be used multiple times)')
-    options.add_argument('-n', '--name', help='Specify a class name for languages that require a boilerplate class (default: uses filename without extension)')
+    options.add_argument('-n', '--line', '--newline', action='store_true', default=False, help='Use a newline after a function declaration (default: single space)')
+    options.add_argument('--classname', help='Specify a class name for languages that require a boilerplate class (default: uses filename without extension)')
     #options.add_argument('-t', '--tabs', '--tabwidth', type=int, help='Expand tabs into a specific number of space characters (default: use tab characters)')
 
     # Output parser
@@ -67,11 +68,12 @@ def main():
         name = parser.get('name')
         lang = parser.get('lang')
         meth = parser.get('meth')
+        line = parser.get('line')
         # Generate boilerplate code
         if name:
-            text = boiler.plate(filename, lang, meth, override_name=name)
+            text = boiler.plate(filename, lang, meth, override_name=name, newlines=line)
         else:
-            text = boiler.plate(filename, lang, meth)
+            text = boiler.plate(filename, lang, meth, newlines=line)
 
         if filepath:
             textfile = None

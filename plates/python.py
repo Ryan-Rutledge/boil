@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 {BP_FUNC_BEG}
-def {BP_FNAME_BEG}{BP_FNAME_END}():
+def {BP_FNAME}():
 	pass
 {BP_FUNC_END}
 
