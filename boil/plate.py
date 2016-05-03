@@ -10,7 +10,7 @@ class Plate:
         name   = re.compile(r'\{BP_NAME\}')
         fname  = re.compile(r'\{BP_FNAME\}')
         func   = re.compile(
-                    r'\n\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n', re.DOTALL)
+                    r'\n?\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n?', re.DOTALL)
         break_ = re.compile(
                     r'\{BP_BREAK_BEG\}\s*?\{BP_ALT_BEG\}(.*?)\{BP_ALT_END\}\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
                     re.DOTALL)
@@ -69,8 +69,8 @@ class Plate:
 
         template = self._newTemplate(name)
         template = self._insertFunctions(template, funcs)
+        template = self._insertBreaks(template, newlines=newlines)
         if spaces is not 0:
             template = self._replaceTabs(template, spaces)
-        template = self._insertBreaks(template, newlines=newlines)
 
         return template
