@@ -7,12 +7,15 @@ class Plate:
     '''Boilerplate code generator.'''
 
     class _regex:
-        name  = re.compile(r'\{BP_NAME\}')
-        fname = re.compile(r'\{BP_FNAME\}')
-        func  = re.compile(
-                    r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
-        line  = re.compile(r'\{BP_LINE_BEG\}(.*?){BP_LINE_END\}', re.DOTALL)
-        tabs  = re.compile(r'\t')
+        name   = re.compile(r'\{BP_NAME\}')
+        fname  = re.compile(r'\{BP_FNAME\}')
+        func   = re.compile(
+                    r'\n\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n', re.DOTALL)
+        break_ = re.compile(
+                    r'\{BP_BREAK_BEG\}\s*?\{BP_ALT_BEG\}(.*?)\{BP_ALT_END\}\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
+                    re.DOTALL)
+        break_line = re.compile(r'\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}')
+        tabs   = re.compile(r'\t')
 
     default_classname = 'DEFAULT_NAME'
 
@@ -21,8 +24,8 @@ class Plate:
 
         self.template = template
 
+        # Extract function template
         fm = Plate._regex.func.search(template)
-
         self.function = fm.groups()[0] if fm else None
 
     def _newTemplate(self, name):
@@ -49,7 +52,14 @@ class Plate:
         return Plate._regex.func.sub(''.join(functions), template)
 
     def _insertBreaks(self, template, newlines=False):
-        return Plate._regex.line.sub(r'\1' if newlines else ' ', template)
+        replace = None
+
+        if newlines:
+            replace = r'\2'
+        else:
+            replace = r'\1'
+
+        return Plate._regex.break_.sub(replace, template)
 
     def _replaceTabs(self, template, spaces=4):
         return Plate._regex.tabs.sub(' '*spaces, template)
@@ -59,9 +69,8 @@ class Plate:
 
         template = self._newTemplate(name)
         template = self._insertFunctions(template, funcs)
-        template = self._insertBreaks(template, newlines=newlines)
-
         if spaces is not 0:
             template = self._replaceTabs(template, spaces)
+        template = self._insertBreaks(template, newlines=newlines)
 
         return template

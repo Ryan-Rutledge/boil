@@ -11,7 +11,7 @@ class Boiler:
     def_plate_dir = 'plates'
 
     def __init__(self, template_directory=None):
-        self.plates = None      # bidirectional dict  names/extensions
+        self.plates = None      # bidirectional dict names/extensions
         self.plates_path = None # Absolute path to boilerplate templates
         self.plate_ext = set()
         self.plate_lan = set()
