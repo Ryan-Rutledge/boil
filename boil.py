@@ -23,6 +23,10 @@ def parse(epilog):
     # Generation parser
     options = parser.add_argument_group('code options')
 
+    options.add_argument('--classname', '--title',
+        help='Specify a class name / title for languages that use one' \
+             ' (default: uses filename without extension)')
+
     options.add_argument('-f', '--force', action='store_true',
         help='Overwrite a file if one already exists' \
              ' (default: %(prog)s will exit with an error code 2)')
@@ -37,13 +41,11 @@ def parse(epilog):
         help='Use a newline after a function declaration' \
              ' (default: single space)')
 
-    options.add_argument('--classname',
-        help='Specify a class name for languages that require a boilerplate' \
-             ' class (default: uses filename without extension)')
-
-    #options.add_argument('-t', '--tabs', '--tabwidth', type=int,
-    #   help='Expand tabs into a specific number of space characters' \
-    #        ' (default: use tab characters)')
+    options.add_argument('-s', '--space', '--spaces', nargs='?',
+        type=int, default=0, const=4, metavar='COUNT',
+        help='Expand indentation into space characters' \
+             ' (default: uses tab characters, or 4 spaces if a number is'
+             ' not provided )')
 
     # Output parser
     output = parser.add_argument_group('output options')
@@ -94,7 +96,8 @@ def main():
                 lang=parser.get('lang'),
                 funcs=parser.get('meth'),
                 name=name,
-                newlines=parser.get('line'))
+                newlines=parser.get('line'),
+                spaces=parser.get('space'))
 
         if filepath:
             textfile = None

@@ -102,14 +102,14 @@ class Boiler:
         
         return template_text
 
-    def plate(self, lang=None, ext=None, funcs=[], name=None, newlines=False):
+    def plate(self, lang=None, ext=None, funcs=[], name=None, newlines=False, spaces=0):
         '''Creates boilerplate code for a specific language.'''
 
         template = self._getTemplate(ext=ext, lang=lang)
 
         if template is None:
             if (lang or ext) is not None:
-                sys.stderr.write('Unkown language or extension.')
+                sys.stderr.write('Unknown language or extension.\n')
                 sys.exit(3)
             else:
                 sys.stderr.write(
@@ -121,6 +121,6 @@ class Boiler:
         plate = Plate(template)
 
         # Get text from plate
-        boilerplateCode = plate.generate(name, funcs, newlines=bool(newlines))
+        boilerplateCode = plate.generate(name=name, funcs=funcs, newlines=bool(newlines), spaces=spaces)
 
         return boilerplateCode

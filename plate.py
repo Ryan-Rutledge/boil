@@ -12,6 +12,7 @@ class Plate:
         func  = re.compile(
                     r'\n\{BP_FUNC_BEG\}(.*)\{BP_FUNC_END\}\n', re.DOTALL)
         line  = re.compile(r'\{BP_LINE_BEG\}(.*?){BP_LINE_END\}', re.DOTALL)
+        tabs  = re.compile(r'\t')
 
     default_classname = 'DEFAULT_NAME'
 
@@ -50,11 +51,17 @@ class Plate:
     def _insertBreaks(self, template, newlines=False):
         return Plate._regex.line.sub(r'\1' if newlines else ' ', template)
 
-    def generate(self, name=None, funcs=[], newlines=False):
+    def _replaceTabs(self, template, spaces=4):
+        return Plate._regex.tabs.sub(' '*spaces, template)
+
+    def generate(self, name=None, funcs=[], newlines=False, spaces=0):
         '''Returns a custom boilerplate template.'''
 
         template = self._newTemplate(name)
         template = self._insertFunctions(template, funcs)
         template = self._insertBreaks(template, newlines=newlines)
+
+        if spaces is not 0:
+            template = self._replaceTabs(template, spaces)
 
         return template
