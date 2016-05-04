@@ -111,13 +111,10 @@ class Boiler:
 
         if template is None:
             if (lang or ext) is not None:
-                sys.stderr.write('Unknown language or extension.\n')
-                sys.exit(3)
+                raise LookupError('Unknown language or extension.')
             else:
-                sys.stderr.write(
-                    'Cannot generate boilerplate from info' \
-                    ' provided. An extension or language is required.\n')
-                sys.exit(1)
+                raise LookupError('Cannot generate boilerplate from info' \
+                    ' provided. An extension or language is required.')
 
         # Create new plate
         plate = Plate(template)
@@ -213,23 +210,23 @@ def parse(epilog):
 
     parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
         help='Explicitly name a language to use (default: searches for a file'
-             ' extension match. If neither a language or a filename with an' \
-             ' extension is provided, %(prog)s will exit with error code 1)')
+             ' extension match. If no match is found %(prog)s will exit' \
+             ' with an error code of 1)')
 
     # Generation parser
     options = parser.add_argument_group('code options')
 
-    options.add_argument('--classname', '--title',
+    options.add_argument('--classname', '--title', metavar='NAME',
         help='Specify a class name / title for languages that use one' \
              ' (default: uses filename without extension)')
 
     options.add_argument('-f', '--force', action='store_true',
         help='Overwrite a file if one already exists' \
-             ' (default: %(prog)s will exit with an error code 2)')
+             ' (default: %(prog)s will exit with an error code of 2)')
 
     options.add_argument('-m', '--meth', '--method', action='append',
         default=[],
-        metavar='METHOD_NAME',
+        metavar='METHOD',
         help='Generates an empty method (can be used multiple times)')
 
     options.add_argument('-n', '--line', '--newline', action='store_true',
@@ -241,7 +238,7 @@ def parse(epilog):
         type=int, default=0, const=4, metavar='COUNT',
         help='Expand indentation into space characters' \
              ' (default: uses tab characters, or 4 spaces if a number is'
-             ' not provided )')
+             ' not provided)')
 
     # Output parser
     output = parser.add_argument_group('output options')
@@ -288,12 +285,17 @@ def main():
             name = parser.get('classname')
 
         # Generate boilerplate code
-        text = boiler.plate(ext=ext,
-                lang=parser.get('lang'),
-                funcs=parser.get('meth'),
-                name=name,
-                newlines=parser.get('line'),
-                spaces=parser.get('space'))
+        try:
+            text = boiler.plate(ext=ext,
+                    lang=parser.get('lang'),
+                    funcs=parser.get('meth'),
+                    name=name,
+                    newlines=parser.get('line'),
+                    spaces=parser.get('space'))
+        except LookupError as e:
+            print(str(e), file=sys.stderr)
+            sys.exit(1)
+            
 
         if filepath:
             textfile = None
@@ -305,9 +307,9 @@ def main():
                 try:
                     textfile = open(filepath, 'x')
                 except FileExistsError:
-                    sys.stderr.write(
+                    print(
                         'File cannot be written because it already exists.' \
-                        ' Use -f to overwrite.\n')
+                        ' Use -f to overwrite.\n', file=sys.stderr)
                     sys.exit(2)
 
             print(text, end='', file=textfile)
