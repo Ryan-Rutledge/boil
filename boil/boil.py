@@ -29,7 +29,7 @@ class Boiler:
             from inspect import getsourcefile
 
             # Get path of current code
-            source_file = os.path.abspath(getsourcefile(lambda:None))
+            source_file = os.path.realpath(getsourcefile(lambda:None))
 
             # Get directory of current code
             source_dir = os.path.split(source_file)[0]
