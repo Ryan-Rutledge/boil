@@ -98,7 +98,7 @@ html5 = Tester('html5', '.html',
 
 java = Tester('java', '.java',
 '''public class DEFAULT_NAME {
-	public static void main(String[], args) {
+	public static void main(String[] args) {
 		return;
 	}
 }
@@ -106,7 +106,7 @@ java = Tester('java', '.java',
 
 '''public class Blue
 {
-  public static void main(String[], args)
+  public static void main(String[] args)
   {
     return;
   }
