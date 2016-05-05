@@ -6,6 +6,7 @@ import sys
 import stat
 import argparse
 
+
 class Boiler:
     '''Boilerplate code template manager.'''
 
@@ -127,6 +128,7 @@ class Boiler:
 
         return boilerplateCode
 
+
 class Plate:
     '''Boilerplate code generator.'''
 
@@ -140,7 +142,6 @@ class Plate:
                      '\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
                     re.DOTALL)
         break_line = re.compile(r'\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}')
-        tabs   = re.compile(r'\t')
 
     default_classname = 'DEFAULT_NAME'
 
@@ -187,7 +188,7 @@ class Plate:
         return Plate._regex.break_.sub(replace, template)
 
     def _replaceTabs(self, template, spaces=4):
-        return Plate._regex.tabs.sub(' '*spaces, template)
+        return template.expandtabs(spaces)
 
     def generate(self, name=None, funcs=[], newlines=False, spaces=0):
         '''Returns a custom boilerplate template.'''
@@ -199,6 +200,7 @@ class Plate:
             template = self._replaceTabs(template, spaces)
 
         return template
+
 
 def parse(epilog):
     '''Parses command line arguments'''
@@ -251,7 +253,6 @@ def parse(epilog):
 
     return vars(parser.parse_args())
 
-
 def main():
     # Prepare boiler templates
     boiler = Boiler()
@@ -284,8 +285,8 @@ def main():
         if parser.get('classname'):
             name = parser.get('classname')
 
-        # Generate boilerplate code
         try:
+            # Generate boilerplate code
             text = boiler.plate(ext=ext,
                     lang=parser.get('lang'),
                     funcs=parser.get('meth'),

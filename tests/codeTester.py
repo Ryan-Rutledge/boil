@@ -25,6 +25,7 @@ int main() {
 	return 0;
 }
 ''',
+
 '''#include <stdio.h>
 
 void green()
@@ -47,6 +48,7 @@ int main() {
 	return 0;
 }
 ''',
+
 '''#include <iostream>
 
 using namespace std;
@@ -76,6 +78,7 @@ html5 = Tester('html5', '.html',
 	<body></body>
 </html>
 ''',
+
 '''<!doctype html>
 <html lang="en">
   <head>
@@ -146,6 +149,7 @@ def main():
 if __name__ == '__main__':
 	main()
 ''',
+
 '''#!/usr/bin/env python2
 
 def green():
@@ -167,6 +171,7 @@ def main():
 if __name__ == '__main__':
 	main()
 ''',
+
 '''#!/usr/bin/env python3
 
 def green():
