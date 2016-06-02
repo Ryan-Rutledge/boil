@@ -221,10 +221,11 @@ def parse():
     parser = argparse.ArgumentParser(
             description='Simple boilerplate code generator.')
 
+    parser.add_argument('-e', '--ext', '--extension', metavar='LANGUAGE',
+        help='Explicitly name an extension to use.')
+
     parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
-        help='Explicitly name a language to use (default: searches for a file'
-             ' extension match. If no match is found %(prog)s will exit' \
-             ' with an error code of 1)')
+        help='Explicitly name a language to use.')
 
     # Generation parser
     options = parser.add_argument_group('code options')
@@ -278,7 +279,9 @@ def main():
         name = None
         ext = None
 
-        if filepath:
+        if parser.get('ext'):
+            ext = parser.get('ext')
+        elif filepath:
             filename = os.path.split(filepath)[1]
             name, ext = filename.rsplit('.', 1)
 
@@ -287,12 +290,13 @@ def main():
 
         try:
             # Generate boilerplate code
-            text = boiler.plate(ext=ext,
-                    lang=parser.get('lang'),
-                    funcs=parser.get('meth'),
-                    name=name,
-                    newlines=parser.get('line'),
-                    spaces=parser.get('space'))
+            text = boiler.plate(
+                    ext      = ext,
+                    lang     = parser.get('lang'),
+                    funcs    = parser.get('meth'),
+                    name     = name,
+                    newlines = parser.get('line'),
+                    spaces   = parser.get('space'))
         except LookupError as e:
             print(str(e), file=sys.stderr)
             sys.exit(1)
