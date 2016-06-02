@@ -14,15 +14,15 @@ def createDatabase(path):
 
     # Replace templates table
     cur.execute('DROP TABLE IF EXISTS templates')
-    cur.execute('CREATE TABLE templates(template TEXT)')
+    cur.execute('CREATE TABLE templates(id INTEGER PRIMARY KEY, template TEXT NOT NULL)')
 
     # Replace names table
     cur.execute('DROP TABLE IF EXISTS names')
-    cur.execute('CREATE TABLE names(name TEXT, template_id INTEGER)')
+    cur.execute('CREATE TABLE names(id INTEGER PRIMARY KEY, name TEXT UNIQUE, template_id REFERENCES templates(id))')
     
     # Replace extensions table
     cur.execute('DROP TABLE IF EXISTS extensions')
-    cur.execute('CREATE TABLE extensions(extension TEXT, template_id INTEGER)')
+    cur.execute('CREATE TABLE extensions(id INTEGER PRIMARY KEY, extension TEXT UNIQUE, template_id REFERENCES templates(id))')
 
     con.commit()
     cur.close()
@@ -44,30 +44,40 @@ def addTemplate(cursor, template, names, extensions):
     '''Adds a template to the cursor's database.'''
 
     # Insert template
-    cursor.execute('INSERT INTO templates(template) VALUES(?)', [template])
-    template_id = cursor.lastrowid
+    if template is not None:
+        cursor.execute('INSERT INTO templates(template) VALUES(?)', [template])
+        template_id = cursor.lastrowid
 
     # Insert names
-    cursor.executemany(
-        'INSERT INTO names(name, template_id) VALUES(?, ?)', 
-        zip(names, cycle([template_id]))
-    )
+    if names:
+        try:
+            cursor.executemany(
+                'INSERT INTO names(name, template_id) VALUES(?, ?)', 
+                zip(names, cycle([template_id])))
+        except sqlite3.IntegrityError:
+            pass
 
     # Insert extensions
-    cursor.executemany(
-        'INSERT INTO extensions(extension, template_id) VALUES(?, ?)',
-        zip(extensions, cycle([template_id]))
-    )
+    if extensions:
+        try:
+            cursor.executemany(
+                'INSERT INTO extensions(extension, template_id) VALUES(?, ?)',
+                zip(extensions, cycle([template_id])))
+        except sqlite3.IntegrityError:
+            pass
 
 
 def makeTemplates(plates_path, base_path):
-    '''Loads boilerplate code template files from path into a database.'''
+    '''Loads code templates from plates_path into database.'''
 
     # Initialize database
     with createDatabase(base_path) as con:
         cur = con.cursor()
 
-        for file_name in os.listdir(plates_path):
+        file_names = os.listdir(plates_path)
+        file_names.sort()
+
+        for file_name in file_names:
             template = open(os.path.join(plates_path, file_name)).read()
 
             names, extensions = extractTemplateInfo(file_name)
@@ -75,7 +85,6 @@ def makeTemplates(plates_path, base_path):
             addTemplate(cur, template, names, extensions)
 
         cur.close()
-
         con.commit()
 
 
@@ -86,7 +95,7 @@ def main():
 
     plates_path = os.path.join(source_dir, 'plates')
 
-    dest_path = os.path.join(source_dir, 'boil/languages.db')
+    dest_path = os.path.join(source_dir, 'boil/plates.db')
 
     makeTemplates(plates_path, dest_path)
 
