@@ -4,74 +4,98 @@ import re
 import os
 import sys
 import stat
+import sqlite3
 import argparse
 
 
 class Boiler:
     '''Boilerplate code template manager.'''
 
-    def_plate_dir = 'plates'
+    _DEF_PLATE_DIR = 'plates.db'
+
+    _QUERY = {
+        'languages':  '''
+            SELECT name
+            FROM names
+            ORDER BY name;''',
+
+        'extensions': '''
+            SELECT '.' || extension
+            FROM extensions
+            ORDER BY extension;''',
+
+        'byEither'  : '''
+            SELECT template
+            FROM templates
+            WHERE id = (
+                SELECT template_id
+                FROM (
+                    SELECT template_id, 1 AS filter
+                    FROM names
+                    WHERE name = ?
+                    UNION
+                    SELECT template_id, 2 AS filter
+                    FROM extensions
+                    WHERE extension = ?
+                )
+                ORDER BY filter
+                LIMIT 1
+            );'''
+    }
 
     def __init__(self, template_directory=None):
-        self.plates = None      # bidirectional dict names/extensions
         self.plates_path = None # Absolute path to boilerplate templates
-        self.plate_ext = set()
-        self.plate_lan = set()
+        self.con = None         # Database connection
+        self.cor = None         # Database cursor
 
         self.loadTemplates(template_directory)
+
+    def __del__(self):
+        self.cur.close()
+        self.con.close()
+
+    def _getDefaultPlatesPath(self):
+        from inspect import getsourcefile
+
+        # Get path of current code
+        source_file = os.path.realpath(getsourcefile(lambda:None))
+
+        # Get directory of current code
+        source_dir = os.path.split(source_file)[0]
+
+        # Get directory of boilerplate templates
+        return os.path.join(source_dir, Boiler._DEF_PLATE_DIR)
+
+    def _getQuery(self, query, *args):
+        self.cur.execute(Boiler._QUERY[query], args)
+
+        return self.cur
+        
 
     def loadTemplates(self, path=None):
         '''Loads boilerplate code template file info.
 
-        If a path is not provided, it defaults to the source code directory
+        If a path is not provided, it will default to the "paths"
+        folder located in the source code directory
         '''
 
         if path is None:
-            from inspect import getsourcefile
-
-            # Get path of current code
-            source_file = os.path.realpath(getsourcefile(lambda:None))
-
-            # Get directory of current code
-            source_dir = os.path.split(source_file)[0]
-
-            # Get directory of boilerplate templates
-            self.plates_path = os.path.join(source_dir, Boiler.def_plate_dir)
+            self.plates_path = self._getDefaultPlatesPath()
         else:
             self.plates_path = path
 
-        # Get list of boilerplate template files
-        template_list = os.listdir(self.plates_path)
-        template_list.sort(reverse=True)
-
-        self.plates = {}
-        self.plate_ext.clear()
-        self.plate_lan.clear()
-        # Add entries for template filetype/extension
-        for template in template_list:
-            file_name, file_ext = os.path.splitext(template)
-
-            self.plates[file_name] = file_ext
-            self.plates[file_ext] = file_name
-
-            self.plate_lan.add(file_name)
-            self.plate_ext.add(file_ext)
+        self.con = sqlite3.connect(self.plates_path)
+        self.cur = self.con.cursor()
 
     def supportedLanguages(self):
         '''Returns a sorted list of supported languages.'''
 
-        langs = list(self.plate_lan)
-        langs.sort()
-
-        return langs
+        return map(lambda x: x[0], self._getQuery('languages').fetchall())
 
     def supportedExtensions(self):
         '''Returns a sorted list of supported extensions.'''
 
-        exts = list(self.plate_ext)
-        exts.sort()
-
-        return exts
+        return map(lambda x: '.'+x[0], self._getQuery('extensions').fetchall())
 
     def _getTemplate(self, lang=None, ext=None):
         '''Returns the contents of a boilerplate template.
@@ -79,28 +103,16 @@ class Boiler:
         First searches for a language match, and then extension
         '''
 
-        template_name = None
-
-        # Look for language template
-        if lang is not None:
-            tmp_ext = self.plates.get(lang)
-
-            if tmp_ext is not None:
-                template_name = lang + tmp_ext
-
-        # Look for extension template
-        if template_name is None and ext is not None:
-            tmp_lang = self.plates.get(ext)
-            
-            if tmp_lang is not None:
-                template_name = tmp_lang + ext
-
         template_text = None
-        if template_name is not None:
-            template_path = os.path.join(self.plates_path, template_name)
 
-            with open(template_path) as template:
-                template_text = template.read()
+        if ext is not None:
+            ext = ext.lstrip('.')
+
+        if lang is not None or ext is not None:
+            row = self._getQuery('byEither', lang, ext).fetchone()
+
+            if row is not None:
+                template_text = row[0]
         
         return template_text
 
@@ -108,7 +120,7 @@ class Boiler:
               newlines=False, spaces=0):
         '''Creates boilerplate code for a specific language.'''
 
-        template = self._getTemplate(ext=ext, lang=lang)
+        template = self._getTemplate(lang=lang, ext=ext)
 
         if template is None:
             if (lang or ext) is not None:
@@ -136,11 +148,11 @@ class Plate:
         name   = re.compile(r'\{BP_NAME\}')
         fname  = re.compile(r'\{BP_FNAME\}')
         func   = re.compile(
-                    r'\n?\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n?', re.DOTALL)
+            r'\n?\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n?', re.DOTALL)
         break_ = re.compile(
-                    r'\{BP_BREAK_BEG\}\s*?\{BP_ALT_BEG\}(.*?)\{BP_ALT_END\}' \
-                     '\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
-                    re.DOTALL)
+            r'\{BP_BREAK_BEG\}\s*?\{BP_ALT_BEG\}(.*?)\{BP_ALT_END\}' \
+             '\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
+            re.DOTALL)
         break_line = re.compile(r'\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}')
 
     default_classname = 'DEFAULT_NAME'
@@ -202,13 +214,12 @@ class Plate:
         return template
 
 
-def parse(epilog):
+def parse():
     '''Parses command line arguments'''
 
     # Main parser
     parser = argparse.ArgumentParser(
-            description='Simple boilerplate code generator.',
-            epilog=epilog)
+            description='Simple boilerplate code generator.')
 
     parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
         help='Explicitly name a language to use (default: searches for a file'
@@ -255,24 +266,13 @@ def parse(epilog):
 
 def main():
     # Prepare boiler templates
-    boiler = Boiler()
-
-    # Format epilog for help page
-    def epilog():
-        def prettyList(l):
-            return ', '.join(list(map(lambda x: "'" + x + "'", l)))
-
-        languages = prettyList(boiler.supportedLanguages())
-        extensions = prettyList(boiler.supportedExtensions())
-
-        return 'Supported languages: {0}\n' \
-               'Supported extensions: {1}'.format(languages, extensions)
-
-    parser = parse(epilog())
+    parser = parse()
 
     if parser.get('help'):
         parser.print_help()
     else:
+        boiler = Boiler()
+
         filepath = parser.get('file')
 
         name = None
@@ -280,7 +280,7 @@ def main():
 
         if filepath:
             filename = os.path.split(filepath)[1]
-            name, ext = os.path.splitext(filename)
+            name, ext = filename.rsplit('.', 1)
 
         if parser.get('classname'):
             name = parser.get('classname')
