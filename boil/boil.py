@@ -2,10 +2,7 @@
 
 import re
 import os
-import sys
-import stat
 import sqlite3
-import argparse
 
 
 class Boiler:
@@ -213,6 +210,8 @@ class Plate:
 def parse():
     '''Parses command line arguments'''
 
+    import argparse
+
     # Main parser
     parser = argparse.ArgumentParser(
             description='Simple boilerplate code generator.')
@@ -262,6 +261,9 @@ def parse():
     return vars(parser.parse_args())
 
 def main():
+    import sys
+    import stat
+
     # Prepare boiler templates
     parser = parse()
 
