@@ -88,7 +88,7 @@ class Boiler:
     def supportedExtensions(self):
         '''Returns a sorted list of supported extensions.'''
 
-        return map(lambda x: '.'+x[0], self._getQuery('extensions').fetchall())
+        return map(lambda x: x[0], self._getQuery('extensions').fetchall())
 
     def _getTemplate(self, lang=None, ext=None):
         '''Returns the contents of a boilerplate template.
@@ -216,16 +216,27 @@ def parse():
     parser = argparse.ArgumentParser(
             description='Simple boilerplate code generator.')
 
-    parser.add_argument('-e', '--ext', '--extension', metavar='LANGUAGE',
+    parser.add_argument('-E', '--lext', '--list-ext', '--list-extensions',
+        action='store_true',
+        help='List all %(prog)s\'s supported languages')
+
+    parser.add_argument('-L', '--llang', '--list-lang', '--list-languages',
+        action='store_true',
+        help='List all %(prog)s\'s supported extensions')
+
+    # Search parser
+    searches = parser.add_argument_group('code selection')
+
+    searches.add_argument('-e', '--ext', '--extension', metavar='EXTENSION',
         help='Explicitly name an extension to use.')
 
-    parser.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
+    searches.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
         help='Explicitly name a language to use.')
 
     # Generation parser
     options = parser.add_argument_group('code options')
 
-    options.add_argument('--classname', '--title', metavar='NAME',
+    options.add_argument('--title', '--classname', metavar='NAME',
         help='Specify a class name / title for languages that use one' \
              ' (default: uses filename without extension)')
 
@@ -269,9 +280,15 @@ def main():
 
     if parser.get('help'):
         parser.print_help()
-    else:
-        boiler = Boiler()
+        return
 
+    boiler = Boiler()
+
+    if parser.get('llang'):
+        print('\n'.join(boiler.supportedLanguages()))
+    elif parser.get('lext'):
+        print('\n'.join(boiler.supportedExtensions()))
+    else:
         filepath = parser.get('file')
 
         name = None
