@@ -25,22 +25,18 @@ class Boiler:
             ORDER BY extension;''',
 
         'byEither'  : '''
-            SELECT template
-            FROM templates
-            WHERE id = (
-                SELECT template_id
-                FROM (
-                    SELECT template_id, 1 AS filter
-                    FROM names
-                    WHERE name = ?
-                    UNION
-                    SELECT template_id, 2 AS filter
-                    FROM extensions
-                    WHERE extension = ?
-                )
-                ORDER BY filter
-                LIMIT 1
-            );'''
+            SELECT t.template
+            FROM templates t, (
+                SELECT template_id, 1 AS filter
+                FROM names
+                WHERE name = ?
+                UNION
+                SELECT template_id, 2 AS filter
+                FROM extensions
+                WHERE extension = ?
+            ) n
+            WHERE t.id = n.template_id
+            LIMIT 1;'''
     }
 
     def __init__(self, template_directory=None):
