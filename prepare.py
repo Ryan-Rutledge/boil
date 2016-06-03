@@ -18,11 +18,17 @@ def createDatabase(path):
 
     # Replace names table
     cur.execute('DROP TABLE IF EXISTS names')
-    cur.execute('CREATE TABLE names(id INTEGER PRIMARY KEY, name TEXT UNIQUE, template_id REFERENCES templates(id))')
+    cur.execute(
+        '''CREATE TABLE names(id INTEGER PRIMARY KEY,
+                              name TEXT UNIQUE COLLATE NOCASE,
+                              template_id REFERENCES templates(id))''')
     
     # Replace extensions table
     cur.execute('DROP TABLE IF EXISTS extensions')
-    cur.execute('CREATE TABLE extensions(id INTEGER PRIMARY KEY, extension TEXT UNIQUE, template_id REFERENCES templates(id))')
+    cur.execute(
+        '''CREATE TABLE extensions(id INTEGER PRIMARY KEY,
+                                   extension TEXT UNIQUE COLLATE NOCASE,
+                                   template_id REFERENCES templates(id))''')
 
     con.commit()
     cur.close()
