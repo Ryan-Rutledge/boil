@@ -325,8 +325,9 @@ if __name__ == '__main__':
             filename = os.path.split(filepath)[1]
             name, ext = filename.rsplit('.', 1)
 
-        if parser.get('classname'):
-            name = parser.get('classname')
+        if parser.get('title'):
+            name = parser.get('title')
+
         try:
             # Generate boilerplate code
             text = boiler.plate(ext=ext,
