@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
+'''Simple boilerplate code generator.'''
+
 import re
 import os
+import sys
+import stat
 import sqlite3
+import argparse
 
 
 class Boiler:
@@ -11,7 +16,7 @@ class Boiler:
     _DEF_PLATE_DIR = 'plates.db'
 
     _QUERY = {
-        'languages':  '''
+        'languages': '''
             SELECT name
             FROM names
             ORDER BY name;''',
@@ -36,22 +41,14 @@ class Boiler:
             LIMIT 1;'''
     }
 
-    def __init__(self, template_directory=None):
-        self.plates_path = None # Absolute path to boilerplate templates
-        self.con = None         # Database connection
-        self.cor = None         # Database cursor
+    @staticmethod
+    def _get_default_plates_path():
+        '''Returns the default path to the plates database.'''
 
-        self.loadTemplates(template_directory)
-
-    def __del__(self):
-        self.cur.close()
-        self.con.close()
-
-    def _getDefaultPlatesPath(self):
         from inspect import getsourcefile
 
         # Get path of current code
-        source_file = os.path.realpath(getsourcefile(lambda:None))
+        source_file = os.path.realpath(getsourcefile(lambda: None))
 
         # Get directory of current code
         source_dir = os.path.split(source_file)[0]
@@ -59,13 +56,26 @@ class Boiler:
         # Get directory of boilerplate templates
         return os.path.join(source_dir, Boiler._DEF_PLATE_DIR)
 
-    def _getQuery(self, query, *args):
+    def __init__(self, template_directory=None):
+        '''Boiler constructor. Opens connection to plate database.'''
+
+        self.plates_path = None # Absolute path to boilerplate templates
+        self.con = None         # Database connection
+        self.cor = None         # Database cursor
+
+        self.load_templates(template_directory)
+
+    def __del__(self):
+        self.cur.close()
+        self.con.close()
+
+    def _get_query(self, query, *args):
         self.cur.execute(Boiler._QUERY[query], args)
 
         return self.cur
-        
 
-    def loadTemplates(self, path=None):
+
+    def load_templates(self, path=None):
         '''Loads boilerplate code template file info.
 
         If a path is not provided, it will default to the "paths"
@@ -73,26 +83,26 @@ class Boiler:
         '''
 
         if path is None:
-            self.plates_path = self._getDefaultPlatesPath()
+            self.plates_path = Boiler._get_default_plates_path()
         else:
             self.plates_path = path
 
         self.con = sqlite3.connect(self.plates_path)
         self.cur = self.con.cursor()
 
-    def supportedLanguages(self):
+    def supported_languages(self):
         '''Returns a sorted list of supported languages.'''
 
-        return map(lambda x: x[0], self._getQuery('languages').fetchall())
+        return list(x[0] for x in self._get_query('languages').fetchall())
 
-    def supportedExtensions(self):
+    def supported_extensions(self):
         '''Returns a sorted list of supported extensions.'''
 
-        return map(lambda x: x[0], self._getQuery('extensions').fetchall())
+        return list(x[0] for x in self._get_query('extensions').fetchall())
 
-    def _getTemplate(self, lang=None, ext=None):
+    def _get_template(self, lang=None, ext=None):
         '''Returns the contents of a boilerplate template.
-           
+
         First searches for a language match, and then extension
         '''
 
@@ -102,18 +112,24 @@ class Boiler:
             ext = ext.lstrip('.')
 
         if lang is not None or ext is not None:
-            row = self._getQuery('byEither', lang, ext).fetchone()
+            row = self._get_query('byEither', lang, ext).fetchone()
 
             if row is not None:
                 template_text = row[0]
-        
+
         return template_text
 
-    def plate(self, lang=None, ext=None, funcs=[], name=None,
-              newlines=False, spaces=0):
+    def plate(self, lang=None, ext=None, options=None):
         '''Creates boilerplate code for a specific language.'''
 
-        template = self._getTemplate(lang=lang, ext=ext)
+        if options is None:
+            options = {}
+        funcs = options['funcs'] if options.get('funcs') else []
+        name = options['name'] if options.get('name') else None
+        newlines = options['newlines'] if options.get('newlines') else False
+        spaces = options['spaces'] if options.get('spaces') else 0
+
+        template = self._get_template(lang=lang, ext=ext)
 
         if template is None:
             if (lang or ext) is not None:
@@ -126,169 +142,178 @@ class Boiler:
         plate = Plate(template)
 
         # Get text from plate
-        boilerplateCode = plate.generate(name=name,
-            funcs=funcs,
-            newlines=bool(newlines),
-            spaces=spaces)
+        boilerplate_code = plate.generate(name=name,
+                                          funcs=funcs,
+                                          newlines=newlines,
+                                          spaces=spaces)
 
-        return boilerplateCode
+        return boilerplate_code
 
 
 class Plate:
     '''Boilerplate code generator.'''
 
-    class _regex:
-        name   = re.compile(r'\{BP_NAME\}')
-        fname  = re.compile(r'\{BP_FNAME\}')
-        func   = re.compile(
-            r'\n?\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n?', re.DOTALL)
-        break_ = re.compile(
+    _regex = {
+        'name': re.compile(r'\{BP_NAME\}'),
+        'fname': re.compile(r'\{BP_FNAME\}'),
+        'func': re.compile(
+            r'\n?\{BP_FUNC_BEG\}(.*?)\{BP_FUNC_END\}\n?', re.DOTALL),
+        'break': re.compile(
             r'\{BP_BREAK_BEG\}\s*?\{BP_ALT_BEG\}(.*?)\{BP_ALT_END\}' \
-             '\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
-            re.DOTALL)
-        break_line = re.compile(r'\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}')
+            r'\s*?\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}\s*?\{BP_BREAK_END\}',
+            re.DOTALL),
+        'break_line': re.compile(r'\{BP_LINE_BEG\}(.*?)\{BP_LINE_END\}')
+    }
 
     default_classname = 'DEFAULT_NAME'
 
-    def __init__(self, template, name=None):
+    def __init__(self, template):
         '''Convert template into a useful object.'''
 
         self.template = template
 
         # Extract function template
-        fm = Plate._regex.func.search(template)
-        self.function = fm.groups()[0] if fm else None
+        match = Plate._regex['func'].search(template)
+        self.function = match.groups()[0] if match else None
 
-    def _newTemplate(self, name):
+    def new_template(self, name):
         '''Returns a template with the name filled in.'''
 
-        if not name:
-            name=Plate.default_classname
+        if name is None:
+            name = Plate.default_classname
 
-        return Plate._regex.name.sub(name, self.template)
-    
-    def _newFunction(self, name):
+        return Plate._regex['name'].sub(name, self.template)
+
+    def new_function(self, name):
         '''Creates an empty function with the name filled in.'''
 
-        return Plate._regex.fname.sub(name, self.function)
+        return Plate._regex['fname'].sub(name, self.function)
 
-    def _insertFunctions(self, template, funcs=[]):
+    def insert_functions(self, template, funcs):
         '''Insert functions into template.'''
 
-        functions = []
+        functions = ''.join(self.new_function(f) for f in funcs)
 
-        for func in funcs:
-            functions.append(self._newFunction(func))
-        
-        return Plate._regex.func.sub(''.join(functions), template)
+        return Plate._regex['func'].sub(functions, template)
 
-    def _insertBreaks(self, template, newlines=False):
-        replace = None
+    @classmethod
+    def insert_breaks(cls, template, newlines=False):
+        '''Inserts breakpoints into template.'''
 
-        if newlines:
-            replace = r'\2'
-        else:
-            replace = r'\1'
+        replace = r'\2' if newlines else r'\1'
 
-        return Plate._regex.break_.sub(replace, template)
+        return Plate._regex['break'].sub(replace, template)
 
-    def _replaceTabs(self, template, spaces=4):
+    @classmethod
+    def replace_tabs(cls, template, spaces=4):
+        '''Replaces template tab characters with spaces.'''
+
         return template.expandtabs(spaces)
 
-    def generate(self, name=None, funcs=[], newlines=False, spaces=0):
+    def generate(self, name=None, funcs=None, newlines=False, spaces=0):
         '''Returns a custom boilerplate template.'''
 
-        template = self._newTemplate(name)
-        template = self._insertFunctions(template, funcs)
-        template = self._insertBreaks(template, newlines=newlines)
+        template = self.new_template(name)
+        template = self.insert_functions(template, funcs if funcs else [])
+        template = self.insert_breaks(template, newlines=newlines)
         if spaces is not 0:
-            template = self._replaceTabs(template, spaces)
+            template = self.replace_tabs(template, spaces)
 
         return template
 
 
-def parse():
-    '''Parses command line arguments'''
+if __name__ == '__main__':
+    def parse():
+        '''Parses command line arguments'''
 
-    import argparse
-
-    # Main parser
-    parser = argparse.ArgumentParser(
+        # Main parser
+        parser = argparse.ArgumentParser(
             description='Simple boilerplate code generator.')
 
-    parser.add_argument('-E', '--lext', '--list-ext', '--list-extensions',
-        action='store_true',
-        help='List all %(prog)s\'s supported languages')
+        parser.add_argument('-E', '--lext', '--list-ext', '--list-extensions',
+                            action='store_true',
+                            help=r'List all %(prog)s\'s supported languages')
 
-    parser.add_argument('-L', '--llang', '--list-lang', '--list-languages',
-        action='store_true',
-        help='List all %(prog)s\'s supported extensions')
+        parser.add_argument('-L', '--llang', '--list-lang', '--list-languages',
+                            action='store_true',
+                            help=r'List all %(prog)s\'s supported extensions')
 
-    # Search parser
-    searches = parser.add_argument_group('code selection')
+        # Search parser
+        searches = parser.add_argument_group('code selection')
 
-    searches.add_argument('-e', '--ext', '--extension', metavar='EXTENSION',
-        help='Explicitly name an extension to use.')
+        searches.add_argument('-e', '--ext', '--extension', metavar='EXTENSION',
+                              help='Explicitly name an extension to use.')
 
-    searches.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
-        help='Explicitly name a language to use.')
+        searches.add_argument('-l', '--lang', '--language', metavar='LANGUAGE',
+                              help='Explicitly name a language to use.')
 
-    # Generation parser
-    options = parser.add_argument_group('code options')
+        # Generation parser
+        options = parser.add_argument_group('code options')
 
-    options.add_argument('--title', '--classname', metavar='NAME',
-        help='Specify a class name / title for languages that use one' \
-             ' (default: uses filename without extension)')
+        options.add_argument('--title', '--classname', metavar='NAME',
+                             help='Specify a class name / title for languages that use one' \
+                            ' (default: uses filename without extension)')
 
-    options.add_argument('-f', '--force', action='store_true',
-        help='Overwrite a file if one already exists' \
-             ' (default: %(prog)s will exit with an error code of 2)')
+        options.add_argument('-f', '--force', action='store_true',
+                             help='Overwrite a file if one already exists' \
+                             ' (default: %(prog)s will exit with an error code of 2)')
 
-    options.add_argument('-m', '--meth', '--method', action='append',
-        default=[],
-        metavar='METHOD',
-        help='Generates an empty method (can be used multiple times)')
+        options.add_argument('-m', '--meth', '--method', action='append',
+                             default=[],
+                             metavar='METHOD',
+                             help='Generates an empty method (can be used multiple times)')
 
-    options.add_argument('-n', '--line', '--newline', action='store_true',
-        default=False,
-        help='Use a newline after a function declaration' \
-             ' (default: single space)')
+        options.add_argument('-n', '--line', '--newline', action='store_true',
+                             default=False,
+                             help='Use a newline after a function declaration' \
+                                  ' (default: single space)')
 
-    options.add_argument('-s', '--space', '--spaces', nargs='?',
-        type=int, default=0, const=4, metavar='COUNT',
-        help='Expand indentation into space characters' \
-             ' (default: uses tab characters, or 4 spaces if a number is'
-             ' not provided)')
+        options.add_argument('-s', '--space', '--spaces', nargs='?',
+                             type=int, default=0, const=4, metavar='COUNT',
+                             help='Expand indentation into space characters' \
+                                  ' (default: uses tab characters, or 4 spaces if a number is'
+                                  ' not provided)')
 
-    # Output parser
-    output = parser.add_argument_group('output options')
+        # Output parser
+        output = parser.add_argument_group('output options')
 
-    output.add_argument('-x', '--exec', '--executable', action='store_true',
-        help='Attempts to make the file executable with chmod u+x')
-    output.add_argument('file', nargs='?',
-        help='Boilerplate file to be created. Returns filename for piping' \
-             ' (default: print code to stdout)')
+        output.add_argument('-x', '--exec', '--executable', action='store_true',
+                            help='Attempts to make the file executable with chmod u+x')
+        output.add_argument('file', nargs='?',
+                            help='Boilerplate file to be created. Returns filename for piping' \
+                                 ' (default: print code to stdout)')
 
-    return vars(parser.parse_args())
+        return vars(parser.parse_args())
 
-def main():
-    import sys
-    import stat
+    def create_template_file(filepath, text, force=False, executable=False):
+        '''Saves text to filepath.'''
 
-    # Prepare boiler templates
-    parser = parse()
+        textfile = None
 
-    if parser.get('help'):
-        parser.print_help()
-        return
+        # Write output to file
+        if force is True:
+            textfile = open(filepath, 'w')
+        else:
+            try:
+                textfile = open(filepath, 'x')
+            except FileExistsError:
+                print(
+                    'File cannot be written because it already exists.' \
+                    ' Use -f to overwrite.\n', file=sys.stderr)
+                sys.exit(2)
 
-    boiler = Boiler()
+        print(text, end='', file=textfile)
+        textfile.close()
 
-    if parser.get('llang'):
-        print('\n'.join(boiler.supportedLanguages()))
-    elif parser.get('lext'):
-        print('\n'.join(boiler.supportedExtensions()))
-    else:
+        # Make file executable for user
+        if executable is True:
+            file_stats = os.stat(filepath).st_mode
+            st_mode = stat.S_IMODE(file_stats)
+            os.chmod(filepath, st_mode | stat.S_IXUSR)
+
+    def create_template(boiler, parser):
+        '''Generates template from boiler with parser options.'''
+
         filepath = parser.get('file')
 
         name = None
@@ -302,49 +327,48 @@ def main():
 
         if parser.get('classname'):
             name = parser.get('classname')
-
         try:
             # Generate boilerplate code
-            text = boiler.plate(
-                    ext      = ext,
-                    lang     = parser.get('lang'),
-                    funcs    = parser.get('meth'),
-                    name     = name,
-                    newlines = parser.get('line'),
-                    spaces   = parser.get('space'))
-        except LookupError as e:
-            print(str(e), file=sys.stderr)
+            text = boiler.plate(ext=ext,
+                                lang=parser.get('lang'),
+                                options={
+                                    'name': name,
+                                    'funcs': parser.get('meth'),
+                                    'newlines': parser.get('line'),
+                                    'spaces': parser.get('space')
+                                })
+
+        except LookupError as exeption:
+            print(str(exeption), file=sys.stderr)
             sys.exit(1)
-            
 
         if filepath:
-            textfile = None
-
-            # Write output to file
-            if parser.get('force'):
-                textfile = open(filepath, 'w')
-            else:
-                try:
-                    textfile = open(filepath, 'x')
-                except FileExistsError:
-                    print(
-                        'File cannot be written because it already exists.' \
-                        ' Use -f to overwrite.\n', file=sys.stderr)
-                    sys.exit(2)
-
-            print(text, end='', file=textfile)
-            textfile.close()
-
-            # Make file executable for user
-            if parser.get('exec'):
-                file_stats = os.stat(filepath).st_mode
-                st_mode = stat.S_IMODE(file_stats)
-                os.chmod(filepath, st_mode | stat.S_IXUSR)
-
+            create_template_file(filepath,
+                                 text,
+                                 force=parser.get('force'),
+                                 executable=parser.get('exec'))
             print(filepath)
         else:
             print(text, end='')
 
+    def main():
+        '''Main script to run from command line.'''
 
-if __name__ == '__main__':
+        # Prepare boiler templates
+        parser = parse()
+
+        # Show help page
+        if parser.get('help'):
+            parser.print_help()
+            return
+
+        boiler = Boiler()
+
+        if parser.get('llang'):
+            print('\n'.join(boiler.supported_languages()))
+        elif parser.get('lext'):
+            print('\n'.join(boiler.supported_extensions()))
+        else:
+            create_template(boiler, parser)
+
     main()

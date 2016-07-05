@@ -1,32 +1,37 @@
 #!/usr/bin/env python3
 
+'''Unit test language data'''
+
 # r !boil -m green --title Blue -l python2 -n -s 2
 
-options = {
-    'funcs'    : ['green'],
+OPTIONS = {
+    'funcs' : ['green'],
     'newlines' : True,
-    'name'     : 'Blue',
-    'spaces'   : 2
+    'name' : 'Blue',
+    'spaces' : 2
 }
 
-class Tester:
-    '''Output comparison class'''
+def lang_tester(lang, ext, default, advanced):
+    '''Creates a dictionary of language info for testing.'''
 
-    def __init__(self, lang, ext, default, advanced):
-        self.lang     = lang
-        self.ext      = ext
-        self.default  = default
-        self.advanced = advanced
+    return {
+        'lang': lang,
+        'ext': ext,
+        'default': default,
+        'advanced': advanced
+    }
 
-c = Tester('c', '.c',
-'''#include <stdio.h>
+LANG = {}
+
+LANG['c'] = lang_tester('c', '.c',
+                        '''#include <stdio.h>
 
 int main() {
 	return 0;
 }
 ''',
 
-'''#include <stdio.h>
+                        '''#include <stdio.h>
 
 void green()
 {
@@ -39,8 +44,8 @@ int main()
 }
 ''')
 
-cpp = Tester('c++', '.cpp',
-'''#include <iostream>
+LANG['cpp'] = lang_tester('c++', '.cpp',
+                          '''#include <iostream>
 
 using namespace std;
 
@@ -49,7 +54,7 @@ int main() {
 }
 ''',
 
-'''#include <iostream>
+                          '''#include <iostream>
 
 using namespace std;
 
@@ -64,8 +69,8 @@ int main()
 }
 ''')
 
-html5 = Tester('html5', '.html',
-'''<!doctype html>
+LANG['html5'] = lang_tester('html5', '.html',
+                            '''<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -78,8 +83,7 @@ html5 = Tester('html5', '.html',
 	<body></body>
 </html>
 ''',
-
-'''<!doctype html>
+                            '''<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -96,15 +100,14 @@ html5 = Tester('html5', '.html',
 </html>
 ''')
 
-java = Tester('java', '.java',
-'''public class DEFAULT_NAME {
+LANG['java'] = lang_tester('java', '.java',
+                           '''public class DEFAULT_NAME {
 	public static void main(String[] args) {
 		return;
 	}
 }
 ''',
-
-'''public class Blue
+                           '''public class Blue
 {
   public static void main(String[] args)
   {
@@ -118,8 +121,8 @@ java = Tester('java', '.java',
 }
 ''')
 
-python = Tester('python', '.py',
-'''#!/usr/bin/env python
+LANG['python'] = lang_tester('python', '.py',
+                             '''#!/usr/bin/env python
 
 def main():
 	pass
@@ -128,8 +131,7 @@ if __name__ == '__main__':
 	main()
 ''',
 
-'''#!/usr/bin/env python
-
+                             '''#!/usr/bin/env python
 def green():
   pass
 
@@ -140,8 +142,8 @@ if __name__ == '__main__':
   main()
 ''')
 
-python2 = Tester('python2', '.py',
-'''#!/usr/bin/env python2
+LANG['python2'] = lang_tester('python2', '.py',
+                              '''#!/usr/bin/env python2
 
 def main():
 	pass
@@ -149,9 +151,7 @@ def main():
 if __name__ == '__main__':
 	main()
 ''',
-
-'''#!/usr/bin/env python2
-
+                              '''#!/usr/bin/env python2
 def green():
   pass
 
@@ -162,8 +162,8 @@ if __name__ == '__main__':
   main()
 ''')
 
-python3 = Tester('python3', '.py',
-'''#!/usr/bin/env python3
+LANG['python3'] = lang_tester('python3', '.py',
+                              '''#!/usr/bin/env python3
 
 def main():
 	pass
@@ -171,9 +171,7 @@ def main():
 if __name__ == '__main__':
 	main()
 ''',
-
-'''#!/usr/bin/env python3
-
+                              '''#!/usr/bin/env python3
 def green():
   pass
 
